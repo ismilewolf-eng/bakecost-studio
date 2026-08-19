@@ -105,7 +105,7 @@
       <!-- Brand Logo -->
       <div class="flex items-center gap-3">
         <div class="w-10 h-10 rounded-xl bg-amber-600 flex items-center justify-center text-white shadow-sm shadow-amber-600/30">
-          <span class="text-xl font-bold">������</span>
+          <span class="text-xl font-bold">🥖</span>
         </div>
         <div>
           <div class="flex items-center gap-2">
@@ -118,7 +118,7 @@
         </div>
       </div>
 
-      <!-- Header Controls: Currency, Recipe Switcher, Actions -->
+      <!-- Header Controls -->
       <div class="flex items-center gap-2 sm:gap-3">
         <select v-model="currency" class="bg-warm-50 border border-warm-200 text-warm-800 text-xs font-semibold rounded-lg px-2.5 py-1.5 focus:ring-2 focus:ring-amber-500 focus:outline-none">
           <option value="$">$ USD (美元)</option>
@@ -156,7 +156,7 @@
             :class="activeRecipeId === r.id ? 'bg-white text-amber-800 shadow-sm border-amber-300 font-bold' : 'text-warm-600 hover:bg-white/60 border-transparent'"
             class="px-3 py-1 text-xs rounded-md border transition flex items-center gap-1.5 shrink-0"
           >
-            <span>{{ r.emoji || '������' }} {{ r.name }}</span>
+            <span>{{ r.emoji || '🧁' }} {{ r.name }}</span>
             <span v-if="recipes.length > 1 && activeRecipeId === r.id" @click.stop="deleteRecipe(r.id)" class="text-warm-400 hover:text-red-600 p-0.5 rounded ml-1">
               <i data-lucide="x" class="w-3 h-3"></i>
             </span>
@@ -229,7 +229,7 @@
           <div class="flex items-center justify-between border-b border-warm-100 pb-3">
             <div>
               <h2 class="font-extrabold text-base text-warm-900 flex items-center gap-2">
-                <span>������ 食材与原料清单</span>
+                <span>🌾 食材与原料清单</span>
                 <span class="text-xs font-normal text-warm-500">({{ currentRecipe.ingredients.length }} 项原料)</span>
               </h2>
               <p class="text-xs text-warm-500 mt-0.5">支持按重量(g/kg/oz/lb)或容积(Cup/勺)自动折算基准成本与损耗</p>
@@ -250,7 +250,7 @@
               <div class="flex items-center justify-between gap-3">
                 <div class="flex-1 flex items-center gap-2">
                   <span class="text-xs font-bold text-warm-400 w-5">#{{ idx + 1 }}</span>
-                  <input v-model="ing.name" placeholder="原料名称 (如: 法国黄油)" class="bg-white border border-warm-200 rounded-lg px-3 py-1 text-sm font-bold text-warm-900 focus:outline-none focus:ring-2 focus:ring-amber-500 flex-1">
+                  <input v-model="ing.name" placeholder="原料名称 (如: 法国总统黄油)" class="bg-white border border-warm-200 rounded-lg px-3 py-1 text-sm font-bold text-warm-900 focus:outline-none focus:ring-2 focus:ring-amber-500 flex-1">
                   <select @change="applyPresetDensity(ing, $event)" class="text-xs bg-white border border-warm-200 text-warm-600 rounded-lg px-2 py-1 focus:outline-none">
                     <option value="">快捷选择预设原料...</option>
                     <option v-for="d in densityList" :key="d.name" :value="d.name">{{ d.name }} ({{ d.density }}g/ml)</option>
@@ -310,7 +310,7 @@
                 </div>
               </div>
 
-              <!-- Row 3: Advanced Yield % & Density Expandable -->
+              <!-- Row 3: Yield % & Density -->
               <div class="flex items-center justify-between text-xs text-warm-500 pt-1 border-t border-dashed border-warm-200">
                 <div class="flex items-center gap-3">
                   <label class="flex items-center gap-1 cursor-pointer">
@@ -344,7 +344,7 @@
           <div class="flex items-center justify-between border-b border-warm-100 pb-3">
             <div>
               <h2 class="font-extrabold text-base text-warm-900 flex items-center gap-2">
-                <span>������ 包装耗材与辅料</span>
+                <span>📦 包装耗材与辅料</span>
                 <span class="text-xs font-normal text-warm-500">({{ currentRecipe.packaging.length }} 项)</span>
               </h2>
               <p class="text-xs text-warm-500 mt-0.5">计入蛋糕盒、手提袋、衬纸、餐具与品牌封口贴等</p>
@@ -752,7 +752,7 @@
   <!-- Footer -->
   <footer class="border-t border-warm-200 bg-white py-6 mt-12 text-center text-xs text-warm-500">
     <div class="max-w-7xl mx-auto px-4 space-y-1.5">
-      <p class="font-semibold text-warm-700">������ BakeCost Studio — 专为出海与独立烘焙工坊打造的极简成本计算器</p>
+      <p class="font-semibold text-warm-700">🥖 BakeCost Studio — 专为出海与独立烘焙工坊打造的极简成本计算器</p>
       <p class="text-2xs text-warm-400">纯前端架构 · 无后端 · 本地隐私计算 · 永久离线可用</p>
     </div>
   </footer>
@@ -823,7 +823,7 @@ const DEFAULT_RECIPES = [
   {
     id: 'r_01',
     name: '法式草莓生乳酪塔',
-    emoji: '������',
+    emoji: '🍓',
     category: '塔派中点',
     batchYield: 8,
     bakingLoss: 8,
@@ -849,7 +849,7 @@ const DEFAULT_RECIPES = [
   {
     id: 'r_02',
     name: '海盐黑巧软心曲奇',
-    emoji: '������',
+    emoji: '🍪',
     category: '曲奇饼干',
     batchYield: 18,
     bakingLoss: 6,
@@ -1087,7 +1087,7 @@ createApp({
       const newR = {
         id: newId,
         name: '未命名烘焙配方',
-        emoji: '������',
+        emoji: '🍰',
         category: '蛋糕甜品',
         batchYield: 1,
         bakingLoss: 5,
@@ -1138,7 +1138,7 @@ createApp({
       const r = currentRecipe.value;
       const s = summary.value;
       const text = [
-        '������ 【' + r.name + '】成本与定价核算',
+        '🥖 【' + r.name + '】成本与定价核算',
         '--------------------------------',
         '• 整批规格: ' + r.batchYield + ' 份',
         '• 单份原料成本: ' + currency.value + s.unitIngCost.toFixed(2),
