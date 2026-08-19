@@ -1,0 +1,1283 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>BakeCost Studio — 烘焙与餐饮配方成本核算与定价工具</title>
+<meta name="description" content="专为海外独立烘焙师、家庭私房与小型Café设计的纯前端配方成本核算器。内置40+原料密度库，支持多单位换算、损耗率、包装人工分摊与毛利反推，100%离线本地存储。">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#FAF8F5">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<!-- Vue 3 CDN -->
+<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+<!-- Tailwind CSS CDN -->
+<script src="https://cdn.tailwindcss.com"></script>
+<!-- html2canvas for Export -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<!-- Lucide Icons -->
+<script src="https://unpkg.com/lucide@latest"></script>
+
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: {
+          sans: ['"Plus Jakarta Sans"', '-apple-system', 'BlinkMacSystemFont', '"PingFang SC"', '"Microsoft YaHei"', 'sans-serif'],
+          mono: ['"JetBrains Mono"', 'monospace'],
+        },
+        colors: {
+          amber: {
+            50: '#FFFBEB',
+            100: '#FEF3C7',
+            200: '#FDE68A',
+            300: '#FCD34D',
+            400: '#FBBF24',
+            500: '#F59E0B',
+            600: '#D97706',
+            700: '#B45309',
+            800: '#92400E',
+            900: '#78350F',
+          },
+          warm: {
+            50: '#FAF8F5',
+            100: '#F5F2EC',
+            200: '#EAE4DC',
+            300: '#DCD4C8',
+            400: '#B8ACA0',
+            500: '#8C7E74',
+            600: '#57534E',
+            700: '#44403C',
+            800: '#2D2825',
+            900: '#1C1917',
+          }
+        }
+      }
+    }
+  }
+</script>
+
+<style>
+  ::selection {
+    background-color: #FEF3C7;
+    color: #92400E;
+  }
+  body {
+    background-color: #FAF8F5;
+    color: #2D2825;
+    font-family: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+  }
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #FAF8F5;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #DCD4C8;
+    border-radius: 999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #B8ACA0;
+  }
+  .card-shadow {
+    box-shadow: 0 4px 20px -2px rgba(180, 83, 9, 0.04), 0 2px 6px rgba(0,0,0,0.02);
+  }
+  @media print {
+    .no-print { display: none !important; }
+    .print-only { display: block !important; }
+  }
+</style>
+</head>
+<body class="min-h-screen antialiased flex flex-col">
+
+<div id="app" class="flex-1 flex flex-col" v-cloak>
+
+  <!-- Top Navigation Bar -->
+  <header class="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-warm-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      
+      <!-- Brand Logo -->
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-amber-600 flex items-center justify-center text-white shadow-sm shadow-amber-600/30">
+          <span class="text-xl font-bold">������</span>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="font-extrabold text-lg text-warm-900 tracking-tight">BakeCost Studio</h1>
+            <span class="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+              <i data-lucide="shield-check" class="w-3 h-3 mr-1 inline"></i> 100% 离线隐私存储
+            </span>
+          </div>
+          <p class="text-xs text-warm-500 hidden sm:block">烘焙与餐饮配方成本核算 · 厨房触控定价工具</p>
+        </div>
+      </div>
+
+      <!-- Header Controls: Currency, Recipe Switcher, Actions -->
+      <div class="flex items-center gap-2 sm:gap-3">
+        <select v-model="currency" class="bg-warm-50 border border-warm-200 text-warm-800 text-xs font-semibold rounded-lg px-2.5 py-1.5 focus:ring-2 focus:ring-amber-500 focus:outline-none">
+          <option value="$">$ USD (美元)</option>
+          <option value="€">€ EUR (欧元)</option>
+          <option value="£">£ GBP (英镑)</option>
+          <option value="¥">¥ CNY (人民币)</option>
+          <option value="C$">C$ CAD (加元)</option>
+          <option value="A$">A$ AUD (澳元)</option>
+        </select>
+
+        <button @click="createNewRecipe" class="bg-warm-800 hover:bg-warm-900 active:scale-95 text-white text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition">
+          <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+          <span class="hidden sm:inline">新建配方</span>
+        </button>
+
+        <button @click="openExportModal" class="bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition">
+          <i data-lucide="share" class="w-3.5 h-3.5"></i>
+          <span class="hidden sm:inline">导出成本卡</span>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- Recipe Tabs & Quick Switcher Strip -->
+  <div class="bg-warm-100/60 border-b border-warm-200/80">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 flex items-center justify-between gap-4 overflow-x-auto">
+      <div class="flex items-center gap-2 shrink-0">
+        <span class="text-xs font-bold text-warm-500 uppercase tracking-wider">当前配方:</span>
+        <div class="flex items-center gap-1.5">
+          <button 
+            v-for="(r, idx) in recipes" 
+            :key="r.id"
+            @click="activeRecipeId = r.id"
+            :class="activeRecipeId === r.id ? 'bg-white text-amber-800 shadow-sm border-amber-300 font-bold' : 'text-warm-600 hover:bg-white/60 border-transparent'"
+            class="px-3 py-1 text-xs rounded-md border transition flex items-center gap-1.5 shrink-0"
+          >
+            <span>{{ r.emoji || '������' }} {{ r.name }}</span>
+            <span v-if="recipes.length > 1 && activeRecipeId === r.id" @click.stop="deleteRecipe(r.id)" class="text-warm-400 hover:text-red-600 p-0.5 rounded ml-1">
+              <i data-lucide="x" class="w-3 h-3"></i>
+            </span>
+          </button>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2 shrink-0 text-xs text-warm-500">
+        <button @click="duplicateCurrentRecipe" class="hover:text-warm-800 flex items-center gap-1">
+          <i data-lucide="copy" class="w-3 h-3"></i> 复制配方
+        </button>
+        <span>•</span>
+        <button @click="openBackupModal" class="hover:text-warm-800 flex items-center gap-1">
+          <i data-lucide="database" class="w-3 h-3"></i> 备份/导入数据
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Work Area -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      
+      <!-- LEFT COLUMN: Recipe Editor (Col 7) -->
+      <div class="lg:col-span-7 space-y-6">
+
+        <!-- Card 1: Recipe Basic Info -->
+        <div class="bg-white rounded-2xl p-5 border border-warm-200 card-shadow space-y-4">
+          <div class="flex items-center justify-between border-b border-warm-100 pb-3">
+            <div class="flex items-center gap-2">
+              <input v-model="currentRecipe.emoji" class="w-8 h-8 text-center text-lg bg-warm-50 border border-warm-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500">
+              <input v-model="currentRecipe.name" placeholder="输入配方名称 (如: 法式草莓生乳酪塔)" class="font-extrabold text-lg text-warm-900 bg-transparent border-b border-dashed border-warm-300 focus:border-amber-600 focus:outline-none px-1 w-full max-w-sm">
+            </div>
+            <select v-model="currentRecipe.category" class="text-xs bg-warm-50 border border-warm-200 rounded-lg px-2.5 py-1 text-warm-700 font-medium focus:outline-none">
+              <option value="蛋糕甜品">蛋糕甜品</option>
+              <option value="面包烘焙">面包烘焙</option>
+              <option value="曲奇饼干">曲奇饼干</option>
+              <option value="塔派中点">塔派中点</option>
+              <option value="饮品酱料">饮品酱料</option>
+              <option value="其他料理">其他料理</option>
+            </select>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+            <div class="bg-warm-50/70 p-3 rounded-xl border border-warm-100">
+              <label class="text-xs font-semibold text-warm-600 block mb-1">整批产出份数</label>
+              <div class="flex items-center gap-2">
+                <input type="number" min="1" step="1" v-model.number="currentRecipe.batchYield" class="w-full bg-white border border-warm-200 rounded-lg px-3 py-1.5 font-bold text-warm-900 text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                <span class="text-xs text-warm-500 font-medium">份/件</span>
+              </div>
+            </div>
+
+            <div class="bg-warm-50/70 p-3 rounded-xl border border-warm-100">
+              <label class="text-xs font-semibold text-warm-600 block mb-1">整炉烤损率 (水分蒸发)</label>
+              <div class="flex items-center gap-2">
+                <input type="number" min="0" max="50" step="1" v-model.number="currentRecipe.bakingLoss" class="w-full bg-white border border-warm-200 rounded-lg px-3 py-1.5 font-bold text-warm-900 text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                <span class="text-xs text-warm-500 font-medium">%</span>
+              </div>
+            </div>
+
+            <div class="bg-warm-50/70 p-3 rounded-xl border border-warm-100">
+              <label class="text-xs font-semibold text-warm-600 block mb-1">配方制作备注</label>
+              <input v-model="currentRecipe.note" placeholder="如: 8寸磨具 / 165°C 35min" class="w-full bg-white border border-warm-200 rounded-lg px-3 py-1.5 text-xs text-warm-800 focus:ring-2 focus:ring-amber-500 focus:outline-none">
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 2: Ingredients Section -->
+        <div class="bg-white rounded-2xl p-5 border border-warm-200 card-shadow space-y-4">
+          <div class="flex items-center justify-between border-b border-warm-100 pb-3">
+            <div>
+              <h2 class="font-extrabold text-base text-warm-900 flex items-center gap-2">
+                <span>������ 食材与原料清单</span>
+                <span class="text-xs font-normal text-warm-500">({{ currentRecipe.ingredients.length }} 项原料)</span>
+              </h2>
+              <p class="text-xs text-warm-500 mt-0.5">支持按重量(g/kg/oz/lb)或容积(Cup/勺)自动折算基准成本与损耗</p>
+            </div>
+            <button @click="showDensityModal = true" class="text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200/80 px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition">
+              <i data-lucide="book-open" class="w-3.5 h-3.5"></i> 常用密度换算库
+            </button>
+          </div>
+
+          <!-- Ingredients List Cards -->
+          <div class="space-y-3">
+            <div 
+              v-for="(ing, idx) in currentRecipe.ingredients" 
+              :key="ing.id"
+              class="p-4 rounded-xl border border-warm-200/90 bg-warm-50/40 hover:bg-warm-50/80 transition space-y-3"
+            >
+              <!-- Row 1: Name, Preset Dropdown, Delete -->
+              <div class="flex items-center justify-between gap-3">
+                <div class="flex-1 flex items-center gap-2">
+                  <span class="text-xs font-bold text-warm-400 w-5">#{{ idx + 1 }}</span>
+                  <input v-model="ing.name" placeholder="原料名称 (如: 法国黄油)" class="bg-white border border-warm-200 rounded-lg px-3 py-1 text-sm font-bold text-warm-900 focus:outline-none focus:ring-2 focus:ring-amber-500 flex-1">
+                  <select @change="applyPresetDensity(ing, $event)" class="text-xs bg-white border border-warm-200 text-warm-600 rounded-lg px-2 py-1 focus:outline-none">
+                    <option value="">快捷选择预设原料...</option>
+                    <option v-for="d in densityList" :key="d.name" :value="d.name">{{ d.name }} ({{ d.density }}g/ml)</option>
+                  </select>
+                </div>
+                <button @click="removeIngredient(idx)" class="text-warm-400 hover:text-red-600 p-1 rounded transition" title="删除该原料">
+                  <i data-lucide="trash-2" class="w-4 h-4"></i>
+                </button>
+              </div>
+
+              <!-- Row 2: Purchase Spec & Price VS Recipe Usage -->
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
+                <div>
+                  <label class="text-warm-500 font-semibold block mb-1">采购总价 ({{ currency }})</label>
+                  <input type="number" min="0" step="0.01" v-model.number="ing.purchasePrice" class="w-full bg-white border border-warm-200 rounded-lg px-2.5 py-1.5 font-bold text-warm-900 focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                </div>
+
+                <div>
+                  <label class="text-warm-500 font-semibold block mb-1">包装规格</label>
+                  <div class="flex items-center gap-1">
+                    <input type="number" min="0.01" step="0.1" v-model.number="ing.purchaseQty" class="w-16 bg-white border border-warm-200 rounded-lg px-2 py-1.5 font-bold text-warm-900 focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                    <select v-model="ing.purchaseUnit" class="bg-white border border-warm-200 rounded-lg px-1.5 py-1.5 text-warm-700 font-medium focus:outline-none">
+                      <option value="g">g</option>
+                      <option value="kg">kg</option>
+                      <option value="oz">oz</option>
+                      <option value="lb">lb</option>
+                      <option value="ml">ml</option>
+                      <option value="l">L</option>
+                      <option value="pcs">个/份</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label class="text-warm-500 font-semibold block mb-1">配方用量</label>
+                  <div class="flex items-center gap-1">
+                    <input type="number" min="0" step="0.1" v-model.number="ing.useQty" class="w-16 bg-white border border-warm-200 rounded-lg px-2 py-1.5 font-bold text-warm-900 focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                    <select v-model="ing.useUnit" class="bg-white border border-warm-200 rounded-lg px-1.5 py-1.5 text-warm-700 font-medium focus:outline-none">
+                      <option value="g">g (克)</option>
+                      <option value="kg">kg (千克)</option>
+                      <option value="oz">oz (盎司)</option>
+                      <option value="lb">lb (磅)</option>
+                      <option value="ml">ml (毫升)</option>
+                      <option value="cup">cup (量杯)</option>
+                      <option value="tbsp">tbsp (大勺)</option>
+                      <option value="tsp">tsp (茶匙)</option>
+                      <option value="pcs">pcs (个)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="bg-amber-50/60 p-2 rounded-lg border border-amber-100 flex flex-col justify-center">
+                  <span class="text-amber-800/80 font-medium">该项食材成本</span>
+                  <span class="font-extrabold text-amber-900 text-sm tabular-nums">
+                    {{ currency }}{{ calcIngredientCost(ing).toFixed(2) }}
+                  </span>
+                </div>
+              </div>
+
+              <!-- Row 3: Advanced Yield % & Density Expandable -->
+              <div class="flex items-center justify-between text-xs text-warm-500 pt-1 border-t border-dashed border-warm-200">
+                <div class="flex items-center gap-3">
+                  <label class="flex items-center gap-1 cursor-pointer">
+                    <span>出成率:</span>
+                    <input type="number" min="10" max="100" v-model.number="ing.yieldPercent" class="w-12 bg-white border border-warm-200 rounded px-1 py-0.5 text-center font-bold text-warm-800">
+                    <span>%</span>
+                    <span v-if="ing.yieldPercent < 100" class="text-amber-700 font-semibold">(含 {{ 100 - ing.yieldPercent }}% 损耗)</span>
+                  </label>
+                  <span class="text-warm-300">•</span>
+                  <label class="flex items-center gap-1">
+                    <span>密度:</span>
+                    <input type="number" step="0.01" min="0.1" v-model.number="ing.density" class="w-12 bg-white border border-warm-200 rounded px-1 py-0.5 text-center font-bold text-warm-800">
+                    <span>g/ml</span>
+                  </label>
+                </div>
+                <div class="text-warm-400 text-2xs">
+                  折算单价: {{ currency }}{{ (calcIngredientUnitCost(ing) * 1000).toFixed(2) }}/kg
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <button @click="addIngredient" class="w-full py-2.5 bg-warm-100/80 hover:bg-warm-100 text-warm-800 border border-dashed border-warm-300 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition">
+            <i data-lucide="plus-circle" class="w-4 h-4 text-amber-600"></i> 添加一行原料
+          </button>
+        </div>
+
+        <!-- Card 3: Packaging -->
+        <div class="bg-white rounded-2xl p-5 border border-warm-200 card-shadow space-y-4">
+          <div class="flex items-center justify-between border-b border-warm-100 pb-3">
+            <div>
+              <h2 class="font-extrabold text-base text-warm-900 flex items-center gap-2">
+                <span>������ 包装耗材与辅料</span>
+                <span class="text-xs font-normal text-warm-500">({{ currentRecipe.packaging.length }} 项)</span>
+              </h2>
+              <p class="text-xs text-warm-500 mt-0.5">计入蛋糕盒、手提袋、衬纸、餐具与品牌封口贴等</p>
+            </div>
+            <button @click="addPackaging" class="text-xs font-bold text-warm-700 hover:text-warm-900 bg-warm-50 hover:bg-warm-100 border border-warm-200 px-2.5 py-1 rounded-lg flex items-center gap-1 transition">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i> 添加包材
+            </button>
+          </div>
+
+          <div class="space-y-2">
+            <div v-for="(pkg, idx) in currentRecipe.packaging" :key="pkg.id" class="flex items-center gap-3 p-2.5 bg-warm-50/50 rounded-xl border border-warm-100 text-xs">
+              <input v-model="pkg.name" placeholder="包材名称 (如: 8寸烫金蛋糕盒)" class="flex-1 bg-white border border-warm-200 rounded-lg px-2.5 py-1 font-semibold text-warm-900 focus:outline-none focus:ring-2 focus:ring-amber-500">
+              <div class="flex items-center gap-1">
+                <span class="text-warm-500 font-medium">单价: {{ currency }}</span>
+                <input type="number" min="0" step="0.05" v-model.number="pkg.cost" class="w-20 bg-white border border-warm-200 rounded-lg px-2 py-1 font-bold text-warm-900 focus:outline-none focus:ring-2 focus:ring-amber-500">
+              </div>
+              <button @click="removePackaging(idx)" class="text-warm-400 hover:text-red-600 p-1 transition">
+                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 4: Labor & Overhead -->
+        <div class="bg-white rounded-2xl p-5 border border-warm-200 card-shadow space-y-4">
+          <div class="border-b border-warm-100 pb-3">
+            <h2 class="font-extrabold text-base text-warm-900">⚡ 人工工时与固定开销分摊</h2>
+            <p class="text-xs text-warm-500 mt-0.5">将制作耗时与水电气、烤箱折旧科学分摊至单份成品</p>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="p-3.5 bg-warm-50/60 rounded-xl border border-warm-100 space-y-2">
+              <span class="text-xs font-bold text-warm-800 flex items-center gap-1.5">
+                <i data-lucide="clock" class="w-3.5 h-3.5 text-amber-600"></i> 人工工时分摊
+              </span>
+              <div class="grid grid-cols-2 gap-2 text-xs">
+                <div>
+                  <label class="text-warm-500 block mb-1">制作总耗时 (分钟)</label>
+                  <input type="number" min="0" step="5" v-model.number="currentRecipe.laborMinutes" class="w-full bg-white border border-warm-200 rounded-lg px-2.5 py-1 font-bold text-warm-900 focus:outline-none">
+                </div>
+                <div>
+                  <label class="text-warm-500 block mb-1">期望时薪 ({{ currency }}/hr)</label>
+                  <input type="number" min="0" step="1" v-model.number="currentRecipe.hourlyRate" class="w-full bg-white border border-warm-200 rounded-lg px-2.5 py-1 font-bold text-warm-900 focus:outline-none">
+                </div>
+              </div>
+              <div class="text-2xs text-warm-500 text-right pt-1">
+                整批人工: {{ currency }}{{ ((currentRecipe.laborMinutes / 60) * currentRecipe.hourlyRate).toFixed(2) }}
+              </div>
+            </div>
+
+            <div class="p-3.5 bg-warm-50/60 rounded-xl border border-warm-100 space-y-2">
+              <span class="text-xs font-bold text-warm-800 flex items-center gap-1.5">
+                <i data-lucide="zap" class="w-3.5 h-3.5 text-amber-600"></i> 水电与设备分摊
+              </span>
+              <div class="text-xs space-y-2">
+                <div class="flex items-center justify-between">
+                  <label class="text-warm-600">整批固定分摊额 ({{ currency }}):</label>
+                  <input type="number" min="0" step="0.5" v-model.number="currentRecipe.fixedOverhead" class="w-24 bg-white border border-warm-200 rounded-lg px-2.5 py-1 font-bold text-warm-900 text-right focus:outline-none">
+                </div>
+                <div class="text-2xs text-warm-400">
+                  可按经验计入每炉烘烤电费 $1.50 ~ $3.00
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- RIGHT COLUMN: Real-time Pricing Dashboard (Col 5) -->
+      <div class="lg:col-span-5">
+        <div class="sticky top-20 space-y-6">
+
+          <!-- Main Result Board -->
+          <div class="bg-white rounded-3xl p-6 border-2 border-amber-200/90 card-shadow space-y-6">
+            
+            <div class="flex items-center justify-between border-b border-warm-100 pb-4">
+              <div>
+                <span class="text-xs font-bold text-amber-800 uppercase tracking-wider">成本与定价核算结果</span>
+                <h3 class="font-extrabold text-xl text-warm-900">{{ currentRecipe.name }}</h3>
+              </div>
+              <div class="text-right">
+                <span class="text-xs text-warm-500 block">单份产出</span>
+                <span class="font-extrabold text-sm text-warm-800">1 / {{ currentRecipe.batchYield }} 份</span>
+              </div>
+            </div>
+
+            <!-- Big Three Dashboard Metrics -->
+            <div class="grid grid-cols-3 gap-2 text-center">
+              <div class="bg-warm-50 p-3 rounded-2xl border border-warm-200/80">
+                <span class="text-2xs font-bold text-warm-500 block mb-1">单份总成本</span>
+                <span class="text-xl sm:text-2xl font-extrabold text-warm-900 tabular-nums">
+                  {{ currency }}{{ summary.unitTotalCost.toFixed(2) }}
+                </span>
+              </div>
+
+              <div :class="foodCostStatusClass" class="p-3 rounded-2xl border transition">
+                <span class="text-2xs font-bold block mb-1">食材比率</span>
+                <span class="text-xl sm:text-2xl font-extrabold tabular-nums">
+                  {{ summary.actualFoodCostPercent.toFixed(1) }}%
+                </span>
+              </div>
+
+              <div class="bg-emerald-50/80 p-3 rounded-2xl border border-emerald-200/80 text-emerald-950">
+                <span class="text-2xs font-bold text-emerald-700 block mb-1">建议零售单价</span>
+                <span class="text-xl sm:text-2xl font-extrabold text-emerald-700 tabular-nums">
+                  {{ currency }}{{ summary.suggestedPrice.toFixed(2) }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Cost Structure Breakdown Stack -->
+            <div class="space-y-2.5 pt-2">
+              <div class="flex justify-between text-xs font-semibold text-warm-600">
+                <span>单份成本结构拆解:</span>
+                <span class="text-warm-800 font-bold">合计: {{ currency }}{{ summary.unitTotalCost.toFixed(2) }}</span>
+              </div>
+
+              <div class="h-3 w-full bg-warm-100 rounded-full overflow-hidden flex">
+                <div :style="{ width: summary.ingShare + '%' }" class="bg-amber-500" title="原料成本"></div>
+                <div :style="{ width: summary.pkgShare + '%' }" class="bg-amber-300" title="包装耗材"></div>
+                <div :style="{ width: summary.laborShare + '%' }" class="bg-stone-500" title="人工工时"></div>
+                <div :style="{ width: summary.overheadShare + '%' }" class="bg-stone-300" title="水电固定开销"></div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-2 text-2xs pt-1">
+                <div class="flex items-center gap-1.5">
+                  <span class="w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0"></span>
+                  <span class="text-warm-600">食材原料:</span>
+                  <span class="font-bold text-warm-900 ml-auto">{{ currency }}{{ summary.unitIngCost.toFixed(2) }}</span>
+                </div>
+                <div class="flex items-center gap-1.5">
+                  <span class="w-2.5 h-2.5 rounded-full bg-amber-300 shrink-0"></span>
+                  <span class="text-warm-600">包装耗材:</span>
+                  <span class="font-bold text-warm-900 ml-auto">{{ currency }}{{ summary.unitPkgCost.toFixed(2) }}</span>
+                </div>
+                <div class="flex items-center gap-1.5">
+                  <span class="w-2.5 h-2.5 rounded-full bg-stone-500 shrink-0"></span>
+                  <span class="text-warm-600">人工工时:</span>
+                  <span class="font-bold text-warm-900 ml-auto">{{ currency }}{{ summary.unitLaborCost.toFixed(2) }}</span>
+                </div>
+                <div class="flex items-center gap-1.5">
+                  <span class="w-2.5 h-2.5 rounded-full bg-stone-300 shrink-0"></span>
+                  <span class="text-warm-600">水电分摊:</span>
+                  <span class="font-bold text-warm-900 ml-auto">{{ currency }}{{ summary.unitOverheadCost.toFixed(2) }}</span>
+                </div>
+              </div>
+            </div>
+
+            <hr class="border-warm-100">
+
+            <!-- Interactive Pricing Sliders -->
+            <div class="space-y-4">
+              <div>
+                <div class="flex justify-between items-center text-xs mb-1.5">
+                  <span class="font-bold text-warm-800">目标食材比率 (Target Food Cost %)</span>
+                  <span class="font-extrabold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200/60">
+                    {{ currentRecipe.targetFoodCostPercent }}% (Markup: {{ (100 / currentRecipe.targetFoodCostPercent).toFixed(2) }}x)
+                  </span>
+                </div>
+                <input 
+                  type="range" 
+                  min="15" 
+                  max="50" 
+                  step="1" 
+                  v-model.number="currentRecipe.targetFoodCostPercent" 
+                  class="w-full accent-amber-600 cursor-pointer h-2 bg-warm-200 rounded-lg"
+                >
+                <div class="flex justify-between text-2xs text-warm-400 mt-1">
+                  <span>15% (高溢价)</span>
+                  <span class="text-emerald-700 font-semibold">25%~32% (餐饮黄金区间)</span>
+                  <span>50% (薄利)</span>
+                </div>
+              </div>
+
+              <!-- Custom Selling Price Override -->
+              <div class="bg-warm-50/80 p-3.5 rounded-2xl border border-warm-200/80 space-y-2">
+                <div class="flex items-center justify-between">
+                  <label class="text-xs font-bold text-warm-800">自定义单件最终售价 ({{ currency }})</label>
+                  <input 
+                    type="number" 
+                    min="0" 
+                    step="0.1" 
+                    v-model.number="currentRecipe.customPrice" 
+                    placeholder="如: 6.50" 
+                    class="w-28 bg-white border border-warm-300 rounded-lg px-3 py-1 font-extrabold text-emerald-800 text-right focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  >
+                </div>
+                <div class="flex justify-between text-xs pt-1 border-t border-dashed border-warm-200">
+                  <span class="text-warm-500">每份纯利润:</span>
+                  <span class="font-extrabold text-emerald-700 tabular-nums">
+                    +{{ currency }}{{ summary.unitNetProfit.toFixed(2) }} (毛利率 {{ summary.grossMarginPercent.toFixed(1) }}%)
+                  </span>
+                </div>
+                <div class="flex justify-between text-xs">
+                  <span class="text-warm-500">整炉整批预期净利润:</span>
+                  <span class="font-extrabold text-warm-900 tabular-nums">
+                    +{{ currency }}{{ (summary.unitNetProfit * currentRecipe.batchYield).toFixed(2) }}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="grid grid-cols-2 gap-3 pt-2">
+              <button @click="openExportModal" class="w-full py-3 bg-amber-600 hover:bg-amber-700 active:scale-95 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 shadow-sm shadow-amber-600/30 transition">
+                <i data-lucide="printer" class="w-4 h-4"></i> 生成打印报价单
+              </button>
+              <button @click="copyPriceSummary" class="w-full py-3 bg-warm-800 hover:bg-warm-900 active:scale-95 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition">
+                <i data-lucide="copy" class="w-4 h-4"></i> 复制核算摘要
+              </button>
+            </div>
+
+          </div>
+
+          <!-- Bottom Trust & Tips Badge -->
+          <div class="bg-amber-50/50 rounded-2xl p-4 border border-amber-200/60 text-xs space-y-2 text-warm-600">
+            <div class="font-bold text-amber-900 flex items-center gap-1.5">
+              <i data-lucide="sparkles" class="w-4 h-4 text-amber-600"></i> 烘焙师定价小贴士
+            </div>
+            <p class="leading-relaxed">
+              根据行业经验，精品私房烘焙的最佳食材成本率通常控制在 <strong>25% ~ 30%</strong> 之间。若包含定制手工糖花或长耗时手绘，请务必拉高人工工时费或使用 <strong>3.5x ~ 4.5x</strong> 的 Markup 乘数。
+            </p>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Modal 1: Density Reference Library -->
+  <div v-if="showDensityModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" @click.self="showDensityModal = false">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl border border-warm-200 max-h-[85vh] flex flex-col">
+      <div class="flex items-center justify-between border-b border-warm-100 pb-3">
+        <div>
+          <h3 class="font-extrabold text-lg text-warm-900">烘焙常用原料容重/密度表</h3>
+          <p class="text-xs text-warm-500">用于将 1 Cup / 1 勺快速换算为精准称重 (g)</p>
+        </div>
+        <button @click="showDensityModal = false" class="text-warm-400 hover:text-warm-800 p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <input v-model="densitySearch" placeholder="搜索原料名称 (如: 面粉 / 黄油 / 细砂糖)..." class="w-full bg-warm-50 border border-warm-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-amber-500">
+
+      <div class="flex-1 overflow-y-auto space-y-1.5 pr-1">
+        <div 
+          v-for="d in filteredDensityList" 
+          :key="d.name" 
+          @click="addIngredientFromDensity(d)"
+          class="p-2.5 hover:bg-amber-50/80 rounded-xl border border-transparent hover:border-amber-200 flex items-center justify-between text-xs cursor-pointer transition"
+        >
+          <div>
+            <span class="font-bold text-warm-900 block">{{ d.name }}</span>
+            <span class="text-2xs text-warm-500">1 Cup ≈ {{ Math.round(236.59 * d.density) }}g | 1 Tbsp ≈ {{ (14.79 * d.density).toFixed(1) }}g</span>
+          </div>
+          <div class="text-right">
+            <span class="font-extrabold text-amber-800 text-xs block">{{ d.density }} g/ml</span>
+            <span class="text-2xs text-amber-600 font-semibold">+ 点击添加</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="pt-2 border-t border-warm-100 text-center">
+        <button @click="showDensityModal = false" class="w-full py-2.5 bg-warm-800 text-white font-bold text-xs rounded-xl">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 2: Export & Printable Sheet Preview -->
+  <div v-if="showExportModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 overflow-y-auto" @click.self="showExportModal = false">
+    <div class="bg-white rounded-3xl max-w-xl w-full p-6 space-y-5 shadow-2xl border border-warm-200 my-auto">
+      <div class="flex items-center justify-between border-b border-warm-100 pb-3">
+        <div>
+          <h3 class="font-extrabold text-lg text-warm-900">配方成本卡与可打印报价单</h3>
+          <p class="text-xs text-warm-500">可一键保存高清图片，或直接调用系统打印机打印</p>
+        </div>
+        <button @click="showExportModal = false" class="text-warm-400 hover:text-warm-800 p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Printable Area Target -->
+      <div id="printTarget" class="p-6 bg-[#FAF8F5] rounded-2xl border border-warm-300 space-y-4 text-warm-900 font-sans">
+        <div class="flex justify-between items-start border-b-2 border-warm-800 pb-3">
+          <div>
+            <span class="text-2xs font-extrabold tracking-widest text-amber-800 uppercase">BAKECOST STUDIO · RECIPE COST SHEET</span>
+            <h2 class="text-2xl font-black text-warm-900 mt-0.5">{{ currentRecipe.emoji }} {{ currentRecipe.name }}</h2>
+            <p class="text-xs text-warm-500 mt-0.5">品类: {{ currentRecipe.category }} | 规格: {{ currentRecipe.batchYield }} 份/批</p>
+          </div>
+          <div class="text-right">
+            <span class="text-2xs text-warm-500 block">生成日期</span>
+            <span class="text-xs font-bold text-warm-800">{{ currentDateStr }}</span>
+          </div>
+        </div>
+
+        <table class="w-full text-xs text-left">
+          <thead>
+            <tr class="border-b border-warm-300 text-warm-600 font-bold">
+              <th class="py-1.5">原料名称</th>
+              <th class="py-1.5 text-center">配方用量</th>
+              <th class="py-1.5 text-center">损耗</th>
+              <th class="py-1.5 text-right">分摊金额</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-warm-200/60">
+            <tr v-for="ing in currentRecipe.ingredients" :key="ing.id">
+              <td class="py-1 font-semibold text-warm-900">{{ ing.name }}</td>
+              <td class="py-1 text-center text-warm-600">{{ ing.useQty }} {{ ing.useUnit }}</td>
+              <td class="py-1 text-center text-warm-500">{{ ing.yieldPercent < 100 ? (100 - ing.yieldPercent) + '%' : '-' }}</td>
+              <td class="py-1 text-right font-bold text-warm-900">{{ currency }}{{ calcIngredientCost(ing).toFixed(2) }}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="bg-white p-3 rounded-xl border border-warm-200 text-xs space-y-1.5">
+          <div class="flex justify-between text-warm-600">
+            <span>食材原料小计:</span>
+            <span class="font-bold text-warm-900">{{ currency }}{{ summary.totalIngCost.toFixed(2) }}</span>
+          </div>
+          <div class="flex justify-between text-warm-600">
+            <span>包装耗材小计 ({{ currentRecipe.packaging.length }}项):</span>
+            <span class="font-bold text-warm-900">{{ currency }}{{ (summary.unitPkgCost * currentRecipe.batchYield).toFixed(2) }}</span>
+          </div>
+          <div class="flex justify-between text-warm-600">
+            <span>人工与水电分摊:</span>
+            <span class="font-bold text-warm-900">{{ currency }}{{ ((summary.unitLaborCost + summary.unitOverheadCost) * currentRecipe.batchYield).toFixed(2) }}</span>
+          </div>
+          <div class="flex justify-between text-warm-900 font-black pt-1 border-t border-warm-100 text-sm">
+            <span>整批总成本 / 单份成本:</span>
+            <span class="text-amber-800">{{ currency }}{{ summary.batchTotalCost.toFixed(2) }} / {{ currency }}{{ summary.unitTotalCost.toFixed(2) }}份</span>
+          </div>
+        </div>
+
+        <div class="flex justify-between items-center p-3 bg-amber-600 text-white rounded-xl">
+          <div>
+            <span class="text-2xs opacity-80 uppercase font-bold tracking-wider">建议对外零售单价</span>
+            <div class="text-2xl font-black">{{ currency }}{{ summary.suggestedPrice.toFixed(2) }} <span class="text-xs font-normal opacity-90">/ 份</span></div>
+          </div>
+          <div class="text-right text-xs">
+            <div>食材比率: <strong>{{ summary.actualFoodCostPercent.toFixed(1) }}%</strong></div>
+            <div>单份净利润: <strong>+{{ currency }}{{ summary.unitNetProfit.toFixed(2) }}</strong></div>
+          </div>
+        </div>
+
+        <div class="text-center text-2xs text-warm-400 pt-1">
+          Powered by BakeCost Studio · 100% 离线本地数据计算
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3 pt-2">
+        <button @click="downloadImageCard" :disabled="isDownloading" class="w-full py-3 bg-warm-800 hover:bg-warm-900 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition">
+          <i data-lucide="download" class="w-4 h-4"></i> {{ isDownloading ? '正在生成图片...' : '下载成本卡图片 (PNG)' }}
+        </button>
+        <button @click="printCard" class="w-full py-3 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition">
+          <i data-lucide="printer" class="w-4 h-4"></i> 调用系统打印 / 存PDF
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 3: Data Backup & Restore -->
+  <div v-if="showBackupModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" @click.self="showBackupModal = false">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-warm-200">
+      <div class="flex items-center justify-between border-b border-warm-100 pb-3">
+        <h3 class="font-extrabold text-base text-warm-900">配方数据备份与恢复</h3>
+        <button @click="showBackupModal = false" class="text-warm-400 hover:text-warm-800 p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <p class="text-xs text-warm-600 leading-relaxed">
+        所有配方均安全存储在您的浏览器本地中。您可以导出为 JSON 文件进行冷备份，或在另一台电脑/手机上导入恢复。
+      </p>
+
+      <div class="space-y-3 pt-2">
+        <button @click="exportJsonBackup" class="w-full py-2.5 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5">
+          <i data-lucide="download" class="w-4 h-4"></i> 导出完整数据备份 (JSON)
+        </button>
+
+        <div class="relative">
+          <input type="file" ref="fileInput" @change="importJsonBackup" accept=".json" class="hidden">
+          <button @click="$refs.fileInput.click()" class="w-full py-2.5 bg-warm-100 hover:bg-warm-200 text-warm-800 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5">
+            <i data-lucide="upload" class="w-4 h-4"></i> 导入并覆盖恢复 (JSON)
+          </button>
+        </div>
+
+        <button @click="resetToDefaults" class="w-full py-2 text-warm-400 hover:text-red-600 text-2xs font-semibold">
+          恢复为出厂预设样例配方
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Bar -->
+  <div 
+    v-if="toastMsg" 
+    class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-warm-900 text-white px-5 py-2.5 rounded-full text-xs font-bold shadow-xl flex items-center gap-2 animate-bounce"
+  >
+    <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400"></i>
+    <span>{{ toastMsg }}</span>
+  </div>
+
+  <!-- Footer -->
+  <footer class="border-t border-warm-200 bg-white py-6 mt-12 text-center text-xs text-warm-500">
+    <div class="max-w-7xl mx-auto px-4 space-y-1.5">
+      <p class="font-semibold text-warm-700">������ BakeCost Studio — 专为出海与独立烘焙工坊打造的极简成本计算器</p>
+      <p class="text-2xs text-warm-400">纯前端架构 · 无后端 · 本地隐私计算 · 永久离线可用</p>
+    </div>
+  </footer>
+
+</div>
+
+<script>
+const { createApp, ref, computed, watch, onMounted, nextTick } = Vue;
+
+const DENSITY_DATA = [
+  { name: '低筋面粉 / 蛋糕粉 (Cake Flour)', density: 0.48 },
+  { name: '中筋面粉 / 通用面粉 (All-Purpose Flour)', density: 0.53 },
+  { name: '高筋面粉 / 面包粉 (Bread Flour)', density: 0.58 },
+  { name: '全麦面粉 (Whole Wheat Flour)', density: 0.51 },
+  { name: '细砂糖 (Granulated Sugar)', density: 0.85 },
+  { name: '糖粉 (Powdered Sugar)', density: 0.50 },
+  { name: '红糖 / 黄糖 (Brown Sugar)', density: 0.80 },
+  { name: '无盐黄油 (Unsalted Butter)', density: 0.95 },
+  { name: '植物油 / 玉米油 (Vegetable Oil)', density: 0.92 },
+  { name: '纯牛奶 (Whole Milk)', density: 1.03 },
+  { name: '淡奶油 / 鲜奶油 (Heavy Cream 35%)', density: 0.98 },
+  { name: '全蛋液 (Whole Eggs)', density: 1.02 },
+  { name: '纯净水 (Water)', density: 1.00 },
+  { name: '蜂蜜 (Honey)', density: 1.42 },
+  { name: '枫糖浆 (Maple Syrup)', density: 1.37 },
+  { name: '马斯卡彭芝士 (Mascarpone)', density: 0.96 },
+  { name: '奶油奶酪 (Cream Cheese)', density: 0.98 },
+  { name: '可可粉 (Cocoa Powder)', density: 0.42 },
+  { name: '宇治抹茶粉 (Matcha Powder)', density: 0.45 },
+  { name: '耐高糖即发酵母 (Instant Dry Yeast)', density: 0.65 },
+  { name: '泡打粉 (Baking Powder)', density: 0.90 },
+  { name: '小苏打 (Baking Soda)', density: 0.95 },
+  { name: '食用海盐 (Fine Sea Salt)', density: 1.15 },
+  { name: '香草精 (Vanilla Extract)', density: 1.05 },
+  { name: '新鲜草莓 (Fresh Strawberries)', density: 0.65 },
+  { name: '新鲜蓝莓 (Fresh Blueberries)', density: 0.68 },
+  { name: '开心果碎 / 酱 (Pistachio Paste)', density: 0.95 },
+  { name: '杏仁粉 (Almond Flour)', density: 0.46 },
+  { name: '耐烤黑巧克力豆 (Chocolate Chips)', density: 0.75 },
+  { name: '比利时黑巧克力块 (Dark Chocolate)', density: 1.20 },
+  { name: '炼乳 (Condensed Milk)', density: 1.29 },
+  { name: '吉利丁片 / 粉 (Gelatin)', density: 0.70 },
+  { name: '酸奶 (Plain Greek Yogurt)', density: 1.06 },
+  { name: '柠檬汁 (Fresh Lemon Juice)', density: 1.03 },
+  { name: '椰蓉 / 椰丝 (Shredded Coconut)', density: 0.35 },
+  { name: '肉桂粉 (Ground Cinnamon)', density: 0.45 }
+];
+
+function unitToGrams(qty, unit, density = 1.0) {
+  if (!qty || qty <= 0) return 0;
+  const u = (unit || 'g').toLowerCase();
+  switch (u) {
+    case 'g': return qty;
+    case 'kg': return qty * 1000;
+    case 'oz': return qty * 28.3495;
+    case 'lb': return qty * 453.592;
+    case 'ml': return qty * density;
+    case 'l': return qty * 1000 * density;
+    case 'cup': return qty * 236.59 * density;
+    case 'tbsp': return qty * 14.79 * density;
+    case 'tsp': return qty * 4.93 * density;
+    case 'pcs': return qty;
+    default: return qty;
+  }
+}
+
+const DEFAULT_RECIPES = [
+  {
+    id: 'r_01',
+    name: '法式草莓生乳酪塔',
+    emoji: '������',
+    category: '塔派中点',
+    batchYield: 8,
+    bakingLoss: 8,
+    targetFoodCostPercent: 28,
+    customPrice: 5.80,
+    laborMinutes: 45,
+    hourlyRate: 25,
+    fixedOverhead: 2.00,
+    note: '8寸塔圈 / 170°C 烤25分钟',
+    ingredients: [
+      { id: 'i1', name: '法国总统无盐黄油', purchasePrice: 5.50, purchaseQty: 500, purchaseUnit: 'g', useQty: 120, useUnit: 'g', yieldPercent: 100, density: 0.95 },
+      { id: 'i2', name: '低筋面粉 (Cake Flour)', purchasePrice: 4.20, purchaseQty: 1, purchaseUnit: 'kg', useQty: 180, useUnit: 'g', yieldPercent: 100, density: 0.48 },
+      { id: 'i3', name: '细砂糖 (Granulated Sugar)', purchasePrice: 3.50, purchaseQty: 1, purchaseUnit: 'kg', useQty: 65, useUnit: 'g', yieldPercent: 100, density: 0.85 },
+      { id: 'i4', name: '意大利马斯卡彭芝士', purchasePrice: 8.90, purchaseQty: 500, purchaseUnit: 'g', useQty: 250, useUnit: 'g', yieldPercent: 100, density: 0.96 },
+      { id: 'i5', name: '新鲜草莓 (去蒂去核)', purchasePrice: 6.99, purchaseQty: 1, purchaseUnit: 'lb', useQty: 300, useUnit: 'g', yieldPercent: 85, density: 0.65 },
+      { id: 'i6', name: '蓝风车淡奶油', purchasePrice: 7.20, purchaseQty: 1, purchaseUnit: 'l', useQty: 150, useUnit: 'ml', yieldPercent: 100, density: 0.98 }
+    ],
+    packaging: [
+      { id: 'p1', name: '8寸金边透明蛋糕盒', cost: 1.20 },
+      { id: 'p2', name: '手提丝带与品牌贴纸', cost: 0.35 }
+    ]
+  },
+  {
+    id: 'r_02',
+    name: '海盐黑巧软心曲奇',
+    emoji: '������',
+    category: '曲奇饼干',
+    batchYield: 18,
+    bakingLoss: 6,
+    targetFoodCostPercent: 25,
+    customPrice: 2.80,
+    laborMinutes: 30,
+    hourlyRate: 20,
+    fixedOverhead: 1.50,
+    note: '一炉18块 / 单块生胚70g',
+    ingredients: [
+      { id: 'i21', name: '法国发酵黄油', purchasePrice: 11.00, purchaseQty: 1, purchaseUnit: 'kg', useQty: 220, useUnit: 'g', yieldPercent: 100, density: 0.95 },
+      { id: 'i22', name: '中筋面粉', purchasePrice: 3.80, purchaseQty: 1, purchaseUnit: 'kg', useQty: 320, useUnit: 'g', yieldPercent: 100, density: 0.53 },
+      { id: 'i23', name: '法芙娜 70% 黑巧克力豆', purchasePrice: 18.50, purchaseQty: 1, purchaseUnit: 'kg', useQty: 250, useUnit: 'g', yieldPercent: 100, density: 0.75 },
+      { id: 'i24', name: '红糖 (Brown Sugar)', purchasePrice: 4.50, purchaseQty: 1, purchaseUnit: 'kg', useQty: 140, useUnit: 'g', yieldPercent: 100, density: 0.80 },
+      { id: 'i25', name: '马尔顿海盐片', purchasePrice: 9.00, purchaseQty: 250, purchaseUnit: 'g', useQty: 15, useUnit: 'g', yieldPercent: 100, density: 1.15 }
+    ],
+    packaging: [
+      { id: 'p21', name: '防油曲奇单片独立包装袋', cost: 0.12 }
+    ]
+  }
+];
+
+createApp({
+  setup() {
+    const currency = ref('$');
+    const recipes = ref([]);
+    const activeRecipeId = ref('');
+    const toastMsg = ref('');
+    const showDensityModal = ref(false);
+    const showExportModal = ref(false);
+    const showBackupModal = ref(false);
+    const densitySearch = ref('');
+    const isDownloading = ref(false);
+
+    onMounted(() => {
+      const saved = localStorage.getItem('bakecost_recipes_v1');
+      if (saved) {
+        try {
+          recipes.value = JSON.parse(saved);
+        } catch (e) {
+          recipes.value = DEFAULT_RECIPES;
+        }
+      } else {
+        recipes.value = DEFAULT_RECIPES;
+      }
+      
+      const savedCurrency = localStorage.getItem('bakecost_currency');
+      if (savedCurrency) currency.value = savedCurrency;
+
+      if (recipes.value.length > 0) {
+        activeRecipeId.value = recipes.value[0].id;
+      }
+
+      nextTick(() => {
+        if (window.lucide) lucide.createIcons();
+      });
+    });
+
+    watch(recipes, (val) => {
+      localStorage.setItem('bakecost_recipes_v1', JSON.stringify(val));
+      nextTick(() => {
+        if (window.lucide) lucide.createIcons();
+      });
+    }, { deep: true });
+
+    watch(currency, (val) => {
+      localStorage.setItem('bakecost_currency', val);
+    });
+
+    const currentRecipe = computed(() => {
+      let r = recipes.value.find(item => item.id === activeRecipeId.value);
+      if (!r && recipes.value.length > 0) {
+        r = recipes.value[0];
+        activeRecipeId.value = r.id;
+      }
+      return r || DEFAULT_RECIPES[0];
+    });
+
+    const densityList = ref(DENSITY_DATA);
+    const filteredDensityList = computed(() => {
+      const q = densitySearch.value.trim().toLowerCase();
+      if (!q) return densityList.value;
+      return densityList.value.filter(d => d.name.toLowerCase().includes(q));
+    });
+
+    const currentDateStr = computed(() => {
+      const now = new Date();
+      return now.toISOString().split('T')[0];
+    });
+
+    function calcIngredientUnitCost(ing) {
+      if (!ing.purchasePrice || !ing.purchaseQty) return 0;
+      if (ing.purchaseUnit === 'pcs') {
+        return ing.purchasePrice / ing.purchaseQty;
+      }
+      const pkgGrams = unitToGrams(ing.purchaseQty, ing.purchaseUnit, ing.density || 1.0);
+      if (pkgGrams <= 0) return 0;
+      return ing.purchasePrice / pkgGrams;
+    }
+
+    function calcIngredientCost(ing) {
+      const pricePerGram = calcIngredientUnitCost(ing);
+      if (ing.useUnit === 'pcs') {
+        return pricePerGram * (ing.useQty || 0);
+      }
+      const useGrams = unitToGrams(ing.useQty, ing.useUnit, ing.density || 1.0);
+      const yieldRate = (ing.yieldPercent || 100) / 100;
+      if (yieldRate <= 0) return 0;
+      const actualRequiredGrams = useGrams / yieldRate;
+      return pricePerGram * actualRequiredGrams;
+    }
+
+    const summary = computed(() => {
+      const r = currentRecipe.value;
+      if (!r) return { totalIngCost: 0, unitTotalCost: 0, suggestedPrice: 0, actualFoodCostPercent: 0, unitNetProfit: 0, grossMarginPercent: 0, ingShare: 100, pkgShare: 0, laborShare: 0, overheadShare: 0, batchTotalCost: 0, unitIngCost: 0, unitPkgCost: 0, unitLaborCost: 0, unitOverheadCost: 0 };
+
+      const totalIngCost = (r.ingredients || []).reduce((sum, ing) => sum + calcIngredientCost(ing), 0);
+      const totalPkgCost = (r.packaging || []).reduce((sum, p) => sum + (p.cost || 0), 0) * (r.batchYield || 1);
+      const totalLaborCost = ((r.laborMinutes || 0) / 60) * (r.hourlyRate || 0);
+      const totalOverhead = (r.fixedOverhead || 0);
+
+      const batchTotalCost = totalIngCost + totalPkgCost + totalLaborCost + totalOverhead;
+      const yieldCount = Math.max(1, r.batchYield || 1);
+
+      const unitIngCost = totalIngCost / yieldCount;
+      const unitPkgCost = totalPkgCost / yieldCount;
+      const unitLaborCost = totalLaborCost / yieldCount;
+      const unitOverheadCost = totalOverhead / yieldCount;
+      const unitTotalCost = batchTotalCost / yieldCount;
+
+      const targetFoodCost = Math.max(10, r.targetFoodCostPercent || 28) / 100;
+      const suggestedPrice = unitIngCost / targetFoodCost;
+
+      const finalPrice = r.customPrice && r.customPrice > 0 ? r.customPrice : suggestedPrice;
+      const actualFoodCostPercent = finalPrice > 0 ? (unitIngCost / finalPrice) * 100 : 0;
+      const unitNetProfit = finalPrice - unitTotalCost;
+      const grossMarginPercent = finalPrice > 0 ? (unitNetProfit / finalPrice) * 100 : 0;
+
+      const ingShare = batchTotalCost > 0 ? (totalIngCost / batchTotalCost) * 100 : 100;
+      const pkgShare = batchTotalCost > 0 ? (totalPkgCost / batchTotalCost) * 100 : 0;
+      const laborShare = batchTotalCost > 0 ? (totalLaborCost / batchTotalCost) * 100 : 0;
+      const overheadShare = batchTotalCost > 0 ? (totalOverhead / batchTotalCost) * 100 : 0;
+
+      return {
+        totalIngCost,
+        batchTotalCost,
+        unitTotalCost,
+        unitIngCost,
+        unitPkgCost,
+        unitLaborCost,
+        unitOverheadCost,
+        suggestedPrice,
+        finalPrice,
+        actualFoodCostPercent,
+        unitNetProfit,
+        grossMarginPercent,
+        ingShare,
+        pkgShare,
+        laborShare,
+        overheadShare
+      };
+    });
+
+    const foodCostStatusClass = computed(() => {
+      const fc = summary.value.actualFoodCostPercent;
+      if (fc <= 32 && fc >= 22) {
+        return 'bg-emerald-50 text-emerald-800 border-emerald-200/80';
+      } else if (fc < 22) {
+        return 'bg-amber-50 text-amber-900 border-amber-200/80';
+      } else {
+        return 'bg-red-50 text-red-800 border-red-200/80';
+      }
+    });
+
+    function addIngredient() {
+      currentRecipe.value.ingredients.push({
+        id: 'i_' + Date.now() + Math.random().toString(36).substr(2, 4),
+        name: '',
+        purchasePrice: 10,
+        purchaseQty: 1,
+        purchaseUnit: 'kg',
+        useQty: 100,
+        useUnit: 'g',
+        yieldPercent: 100,
+        density: 1.0
+      });
+      showToast('已添加原料行');
+    }
+
+    function removeIngredient(idx) {
+      currentRecipe.value.ingredients.splice(idx, 1);
+    }
+
+    function applyPresetDensity(ing, event) {
+      const name = event.target.value;
+      if (!name) return;
+      const found = densityList.value.find(d => d.name === name);
+      if (found) {
+        ing.name = found.name.split(' (')[0];
+        ing.density = found.density;
+        showToast('已应用 ' + ing.name + ' 密度: ' + found.density + 'g/ml');
+      }
+    }
+
+    function addIngredientFromDensity(d) {
+      currentRecipe.value.ingredients.push({
+        id: 'i_' + Date.now(),
+        name: d.name.split(' (')[0],
+        purchasePrice: 10,
+        purchaseQty: 1,
+        purchaseUnit: 'kg',
+        useQty: 100,
+        useUnit: 'g',
+        yieldPercent: 100,
+        density: d.density
+      });
+      showDensityModal.value = false;
+      showToast('已从密度库添加: ' + d.name.split(' (')[0]);
+    }
+
+    function addPackaging() {
+      currentRecipe.value.packaging.push({
+        id: 'p_' + Date.now(),
+        name: '包装袋/盒',
+        cost: 0.50
+      });
+    }
+
+    function removePackaging(idx) {
+      currentRecipe.value.packaging.splice(idx, 1);
+    }
+
+    function createNewRecipe() {
+      const newId = 'r_' + Date.now();
+      const newR = {
+        id: newId,
+        name: '未命名烘焙配方',
+        emoji: '������',
+        category: '蛋糕甜品',
+        batchYield: 1,
+        bakingLoss: 5,
+        targetFoodCostPercent: 28,
+        customPrice: 0,
+        laborMinutes: 30,
+        hourlyRate: 20,
+        fixedOverhead: 1.0,
+        note: '',
+        ingredients: [
+          { id: 'i1', name: '原料1', purchasePrice: 5.00, purchaseQty: 1, purchaseUnit: 'kg', useQty: 200, useUnit: 'g', yieldPercent: 100, density: 1.0 }
+        ],
+        packaging: []
+      };
+      recipes.value.push(newR);
+      activeRecipeId.value = newId;
+      showToast('已创建新配方');
+    }
+
+    function duplicateCurrentRecipe() {
+      const cur = currentRecipe.value;
+      const clone = JSON.parse(JSON.stringify(cur));
+      clone.id = 'r_' + Date.now();
+      clone.name = cur.name + ' (副本)';
+      recipes.value.push(clone);
+      activeRecipeId.value = clone.id;
+      showToast('已复制当前配方');
+    }
+
+    function deleteRecipe(id) {
+      if (recipes.value.length <= 1) {
+        showToast('至少保留一个配方');
+        return;
+      }
+      recipes.value = recipes.value.filter(r => r.id !== id);
+      activeRecipeId.value = recipes.value[0].id;
+      showToast('已删除配方');
+    }
+
+    function showToast(msg) {
+      toastMsg.value = msg;
+      setTimeout(() => {
+        toastMsg.value = '';
+      }, 3000);
+    }
+
+    function copyPriceSummary() {
+      const r = currentRecipe.value;
+      const s = summary.value;
+      const text = [
+        '������ 【' + r.name + '】成本与定价核算',
+        '--------------------------------',
+        '• 整批规格: ' + r.batchYield + ' 份',
+        '• 单份原料成本: ' + currency.value + s.unitIngCost.toFixed(2),
+        '• 单份总成本 (含包材/人工): ' + currency.value + s.unitTotalCost.toFixed(2),
+        '• 目标食材比率: ' + s.actualFoodCostPercent.toFixed(1) + '%',
+        '• 建议对外售价: ' + currency.value + s.suggestedPrice.toFixed(2) + ' /份',
+        '• 预期单份净利润: +' + currency.value + s.unitNetProfit.toFixed(2) + ' (毛利率 ' + s.grossMarginPercent.toFixed(1) + '%)',
+        '--------------------------------',
+        'Generated by BakeCost Studio'
+      ].join('\n');
+
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(text);
+        showToast('已复制核算摘要到剪贴板！');
+      }
+    }
+
+    function openExportModal() {
+      showExportModal.value = true;
+      nextTick(() => {
+        if (window.lucide) lucide.createIcons();
+      });
+    }
+
+    function openBackupModal() {
+      showBackupModal.value = true;
+      nextTick(() => {
+        if (window.lucide) lucide.createIcons();
+      });
+    }
+
+    async function downloadImageCard() {
+      isDownloading.value = true;
+      try {
+        const el = document.getElementById('printTarget');
+        const canvas = await html2canvas(el, { scale: 2, backgroundColor: '#FAF8F5' });
+        const link = document.createElement('a');
+        link.download = (currentRecipe.value.name || 'Recipe_Cost') + '_BakeCost.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+        showToast('已成功保存高清图片！');
+      } catch (e) {
+        showToast('导出图片失败，请尝试直接打印');
+      } finally {
+        isDownloading.value = false;
+      }
+    }
+
+    function printCard() {
+      window.print();
+    }
+
+    function exportJsonBackup() {
+      const data = {
+        version: '1.0',
+        exportedAt: new Date().toISOString(),
+        currency: currency.value,
+        recipes: recipes.value
+      };
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'BakeCost_Backup_' + new Date().toISOString().split('T')[0] + '.json';
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('已导出备份 JSON 文件');
+    }
+
+    function importJsonBackup(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const parsed = JSON.parse(e.target.result);
+          if (parsed && Array.isArray(parsed.recipes)) {
+            recipes.value = parsed.recipes;
+            if (parsed.currency) currency.value = parsed.currency;
+            if (recipes.value.length > 0) activeRecipeId.value = recipes.value[0].id;
+            showBackupModal.value = false;
+            showToast('已成功导入 ' + parsed.recipes.length + ' 个配方！');
+          } else {
+            showToast('JSON 格式不正确');
+          }
+        } catch (err) {
+          showToast('读取文件失败');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function resetToDefaults() {
+      if (confirm('确定要重置为出厂预设配方吗？')) {
+        recipes.value = DEFAULT_RECIPES;
+        activeRecipeId.value = DEFAULT_RECIPES[0].id;
+        showBackupModal.value = false;
+        showToast('已恢复预设');
+      }
+    }
+
+    return {
+      currency,
+      recipes,
+      activeRecipeId,
+      currentRecipe,
+      densityList,
+      filteredDensityList,
+      densitySearch,
+      summary,
+      foodCostStatusClass,
+      currentDateStr,
+      toastMsg,
+      showDensityModal,
+      showExportModal,
+      showBackupModal,
+      isDownloading,
+      calcIngredientUnitCost,
+      calcIngredientCost,
+      addIngredient,
+      removeIngredient,
+      applyPresetDensity,
+      addIngredientFromDensity,
+      addPackaging,
+      removePackaging,
+      createNewRecipe,
+      duplicateCurrentRecipe,
+      deleteRecipe,
+      copyPriceSummary,
+      openExportModal,
+      openBackupModal,
+      downloadImageCard,
+      printCard,
+      exportJsonBackup,
+      importJsonBackup,
+      resetToDefaults
+    };
+  }
+}).mount('#app');
+</script>
+</body>
+</html>

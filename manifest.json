@@ -1,0 +1,16 @@
+{
+  "name": "BakeCost Studio - 烘焙配方成本核算器",
+  "short_name": "BakeCost",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#FAF8F5",
+  "theme_color": "#FAF8F5",
+  "description": "专为海外独立烘焙师与小型餐馆设计的配方成本核算与定价工具",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🥖</text></svg>",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml"
+    }
+  ]
+}
