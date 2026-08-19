@@ -1,1276 +1,893 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>BakeCost Studio — Recipe Costing & Bakery Pricing Calculator</title>
-<meta name="description" content="Professional recipe costing, ingredient unit conversion, labor overhead allocation, and food cost margin calculator for independent bakers, home cottage bakeries, and small cafés. 100% offline & private.">
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#FAF8F5">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
-<!-- Vue 3 CDN -->
-<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
-<!-- Tailwind CSS CDN -->
-<script src="https://cdn.tailwindcss.com"></script>
-<!-- html2canvas for Image Export -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<!-- Lucide Icons -->
-<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+  // Immediately purge legacy cache from previous versions
+  try {
+    if (localStorage.getItem('bakecost_recipes_v1')) {
+      localStorage.removeItem('bakecost_recipes_v1');
+    }
+    if (localStorage.getItem('bakecost_recipes')) {
+      localStorage.removeItem('bakecost_recipes');
+    }
+    if ('caches' in window) {
+      caches.keys().then(keys => {
+        keys.forEach(key => {
+          if (key.includes('v1') || key !== 'bakecost-en-v2') {
+            caches.delete(key);
+          }
+        });
+      });
+    }
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(registrations => {
+        registrations.forEach(r => r.update());
+      });
+    }
+  } catch (e) {}
+</script>
 
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BakeCost Studio — Recipe Costing &amp; Food Pricing Calculator</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🥖</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
 <script>
   tailwind.config = {
     theme: {
       extend: {
-        fontFamily: {
-          sans: ['"Plus Jakarta Sans"', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
-          mono: ['"JetBrains Mono"', 'monospace'],
-        },
         colors: {
-          amber: {
-            50: '#FFFBEB',
-            100: '#FEF3C7',
-            200: '#FDE68A',
-            300: '#FCD34D',
-            400: '#FBBF24',
-            500: '#F59E0B',
-            600: '#D97706',
-            700: '#B45309',
-            800: '#92400E',
-            900: '#78350F',
-          },
-          warm: {
-            50: '#FAF8F5',
-            100: '#F5F2EC',
-            200: '#EAE4DC',
-            300: '#DCD4C8',
-            400: '#B8ACA0',
-            500: '#8C7E74',
-            600: '#57534E',
-            700: '#44403C',
-            800: '#2D2825',
-            900: '#1C1917',
+          oatmeal: '#FAF8F5',
+          espresso: '#2D2825',
+          caramel: {
+            50: '#FFFBEB', 100: '#FEF3C7', 200: '#FDE68A', 300: '#FCD34D',
+            400: '#FBBF24', 500: '#D97706', 600: '#B45309', 700: '#92400E',
+            800: '#78350F', 900: '#451A03'
           }
+        },
+        fontFamily: {
+          sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif']
         }
       }
     }
-  }
+  };
 </script>
-
+<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
 <style>
-  ::selection {
-    background-color: #FEF3C7;
-    color: #92400E;
-  }
-  body {
-    background-color: #FAF8F5;
+  html, body { background: #FAF8F5; font-family: 'Inter', ui-sans-serif, system-ui, sans-serif; }
+  .num { font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; }
+  ::-webkit-scrollbar { height: 8px; width: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #D9770660; border-radius: 999px; }
+
+  .field-input {
+    min-height: 44px;
+    width: 100%;
+    border-radius: 0.65rem;
+    border: 1px solid rgba(45,40,37,0.14);
+    background: #ffffff;
+    padding: 0 0.7rem;
+    font-size: 0.875rem;
     color: #2D2825;
-    font-family: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    outline: none;
+    transition: border-color .15s ease, box-shadow .15s ease;
   }
-  .tabular-nums {
-    font-variant-numeric: tabular-nums;
-  }
-  ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-  }
-  ::-webkit-scrollbar-track {
-    background: #FAF8F5;
-  }
-  ::-webkit-scrollbar-thumb {
-    background: #DCD4C8;
-    border-radius: 999px;
-  }
-  ::-webkit-scrollbar-thumb:hover {
-    background: #B8ACA0;
-  }
-  .card-shadow {
-    box-shadow: 0 4px 20px -2px rgba(180, 83, 9, 0.04), 0 2px 6px rgba(0,0,0,0.02);
-  }
+  .field-input:focus { border-color: #D97706; box-shadow: 0 0 0 3px rgba(217,119,6,0.15); }
+  select.field-input { min-height: 44px; }
+  textarea.field-input { min-height: 80px; padding-top: .6rem; }
+  .field-label { font-size: 0.72rem; font-weight: 600; letter-spacing: .02em; text-transform: uppercase; color: rgba(45,40,37,0.55); margin-bottom: .3rem; display: block; }
+
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: .4rem; min-height: 44px; padding: 0 1rem; border-radius: 0.75rem; font-size: 0.875rem; font-weight: 600; transition: all .15s ease; white-space: nowrap; cursor: pointer; border: 1px solid transparent; }
+  .btn-primary { background: #D97706; color: #fff; }
+  .btn-primary:hover { background: #B45309; }
+  .btn-secondary { background: #fff; color: #2D2825; border-color: rgba(45,40,37,0.14); }
+  .btn-secondary:hover { border-color: #D97706; color: #B45309; }
+  .btn-ghost { background: transparent; color: #2D2825; }
+  .btn-ghost:hover { background: rgba(45,40,37,0.06); }
+  .btn-danger { background: #fff; color: #B91C1C; border-color: rgba(185,28,28,0.25); }
+  .btn-danger:hover { background: #FEF2F2; }
+  .icon-btn { display:inline-flex; align-items:center; justify-content:center; width:44px; height:44px; border-radius:0.65rem; }
+
+  .card { background: #fff; border: 1px solid rgba(45,40,37,0.08); border-radius: 1.1rem; box-shadow: 0 1px 2px rgba(45,40,37,0.04), 0 8px 24px -16px rgba(45,40,37,0.15); }
+
+  input[type=range].caramel-slider { -webkit-appearance: none; appearance: none; width: 100%; height: 8px; border-radius: 999px; background: linear-gradient(to right, #D97706 0%, #D97706 var(--fill,30%), #F3E8D8 var(--fill,30%), #F3E8D8 100%); }
+  input[type=range].caramel-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 999px; background: #fff; border: 3px solid #B45309; box-shadow: 0 1px 4px rgba(0,0,0,0.25); cursor: pointer; margin-top: -7px; }
+  input[type=range].caramel-slider::-moz-range-thumb { width: 22px; height: 22px; border-radius: 999px; background: #fff; border: 3px solid #B45309; box-shadow: 0 1px 4px rgba(0,0,0,0.25); cursor: pointer; }
+  input[type=range].caramel-slider::-moz-range-track { height: 8px; border-radius: 999px; background: #F3E8D8; }
+
+  .fade-enter-active, .fade-leave-active { transition: opacity .18s ease, transform .18s ease; }
+  .fade-enter-from, .fade-leave-to { opacity: 0; transform: translateY(6px); }
+
+  .modal-backdrop { background: rgba(45,40,37,0.55); backdrop-filter: blur(2px); }
+
   @media print {
-    .no-print { display: none !important; }
-    .print-only { display: block !important; }
+    body * { visibility: hidden; }
+    #exportCard, #exportCard * { visibility: visible; }
+    #exportCard { position: absolute; top: 0; left: 0; width: 100%; margin: 0; box-shadow: none; border: none; }
+    #printOnlyWrap { position: static !important; }
   }
 </style>
 </head>
-<body class="min-h-screen antialiased flex flex-col">
+<body class="bg-oatmeal text-espresso antialiased">
+<div id="app">
 
-<div id="app" class="flex-1 flex flex-col" v-cloak>
-
-  <!-- Top Navigation Bar -->
-  <header class="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-warm-200">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-      
-      <!-- Brand Logo -->
+  <!-- ============ HEADER ============ -->
+  <header class="sticky top-0 z-30 bg-oatmeal/95 backdrop-blur border-b border-espresso/10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
       <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl bg-amber-600 flex items-center justify-center text-white shadow-sm shadow-amber-600/30 font-bold text-xl">
-          B
-        </div>
-        <div>
-          <div class="flex items-center gap-2">
-            <h1 class="font-extrabold text-lg text-warm-900 tracking-tight">BakeCost Studio</h1>
-            <span class="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
-              <i data-lucide="shield-check" class="w-3 h-3 mr-1 inline"></i> 100% Offline & Private
-            </span>
-          </div>
-          <p class="text-xs text-warm-500 hidden sm:block">Bakery Recipe Costing & Food Margin Calculator</p>
+        <div class="w-10 h-10 rounded-xl bg-caramel-500 flex items-center justify-center text-xl shadow-sm shrink-0">🥖</div>
+        <div class="leading-tight">
+          <h1 class="font-extrabold text-lg sm:text-xl text-espresso">BakeCost Studio</h1>
+          <p class="text-[11px] sm:text-xs text-espresso/55 -mt-0.5">Recipe Costing &amp; Food Pricing Calculator</p>
         </div>
       </div>
-
-      <!-- Header Controls -->
-      <div class="flex items-center gap-2 sm:gap-3">
-        <select v-model="currency" class="bg-warm-50 border border-warm-200 text-warm-800 text-xs font-semibold rounded-lg px-2.5 py-1.5 focus:ring-2 focus:ring-amber-500 focus:outline-none">
-          <option value="$">$ USD (US Dollar)</option>
-          <option value="€">€ EUR (Euro)</option>
-          <option value="£">£ GBP (British Pound)</option>
-          <option value="C$">C$ CAD (Canadian Dollar)</option>
-          <option value="A$">A$ AUD (Australian Dollar)</option>
-          <option value="¥">¥ JPY/CNY</option>
-        </select>
-
-        <button @click="createNewRecipe" class="bg-warm-800 hover:bg-warm-900 active:scale-95 text-white text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition">
-          <i data-lucide="plus" class="w-3.5 h-3.5"></i>
-          <span class="hidden sm:inline">New Recipe</span>
+      <div class="flex items-center gap-2">
+        <button @click="showBackupModal = true" class="btn btn-secondary hidden sm:inline-flex">
+          <i data-lucide="database" class="w-4 h-4"></i> Backup &amp; Restore
         </button>
-
-        <button @click="openExportModal" class="bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition">
-          <i data-lucide="share" class="w-3.5 h-3.5"></i>
-          <span class="hidden sm:inline">Export Card</span>
+        <button @click="showBackupModal = true" class="icon-btn btn-secondary sm:hidden">
+          <i data-lucide="database" class="w-4 h-4"></i>
+        </button>
+        <button @click="openExportModal" class="btn btn-primary">
+          <i data-lucide="download" class="w-4 h-4"></i> <span class="hidden sm:inline">Export Cost Card</span><span class="sm:hidden">Export</span>
         </button>
       </div>
-
     </div>
   </header>
 
-  <!-- Recipe Tabs & Quick Switcher Strip -->
-  <div class="bg-warm-100/60 border-b border-warm-200/80">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 flex items-center justify-between gap-4 overflow-x-auto">
-      <div class="flex items-center gap-2 shrink-0">
-        <span class="text-xs font-bold text-warm-500 uppercase tracking-wider">Recipes:</span>
-        <div class="flex items-center gap-1.5">
-          <button 
-            v-for="(r, idx) in recipes" 
-            :key="r.id"
-            @click="activeRecipeId = r.id"
-            :class="activeRecipeId === r.id ? 'bg-white text-amber-800 shadow-sm border-amber-300 font-bold' : 'text-warm-600 hover:bg-white/60 border-transparent'"
-            class="px-3 py-1 text-xs rounded-md border transition flex items-center gap-1.5 shrink-0"
-          >
-            <span>{{ r.name }}</span>
-            <span v-if="recipes.length > 1 && activeRecipeId === r.id" @click.stop="deleteRecipe(r.id)" class="text-warm-400 hover:text-red-600 p-0.5 rounded ml-1" title="Delete recipe">
-              <i data-lucide="x" class="w-3 h-3"></i>
-            </span>
-          </button>
-        </div>
-      </div>
-
-      <div class="flex items-center gap-2 shrink-0 text-xs text-warm-500">
-        <button @click="duplicateCurrentRecipe" class="hover:text-warm-800 flex items-center gap-1">
-          <i data-lucide="copy" class="w-3 h-3"></i> Duplicate
-        </button>
-        <span>•</span>
-        <button @click="openBackupModal" class="hover:text-warm-800 flex items-center gap-1">
-          <i data-lucide="database" class="w-3 h-3"></i> Backup & Restore
-        </button>
-      </div>
+  <!-- ============ RECIPE SWITCHER ============ -->
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 pt-4">
+    <div class="flex items-center gap-2 overflow-x-auto pb-1">
+      <button v-for="r in recipes" :key="r.id" @click="activeId = r.id"
+        class="shrink-0 flex items-center gap-2 pl-2.5 pr-3.5 h-11 rounded-xl border text-sm font-semibold transition"
+        :class="r.id === activeId ? 'bg-caramel-500 border-caramel-500 text-white shadow-sm' : 'bg-white border-espresso/10 text-espresso/75 hover:border-caramel-500/50'">
+        <span class="text-lg leading-none">{{ r.icon }}</span>
+        <span class="max-w-[9rem] truncate">{{ r.name || 'Untitled Recipe' }}</span>
+      </button>
+      <button @click="addNewRecipe" class="shrink-0 flex items-center gap-1.5 h-11 px-3.5 rounded-xl border border-dashed border-caramel-600/50 text-caramel-700 text-sm font-semibold hover:bg-caramel-50">
+        <i data-lucide="plus" class="w-4 h-4"></i> New Recipe
+      </button>
     </div>
   </div>
 
-  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full">
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-      
-      <!-- LEFT COLUMN: Recipe Editor (Col 7) -->
-      <div class="lg:col-span-7 space-y-6">
+  <!-- ============ MAIN ============ -->
+  <main v-if="activeRecipe" class="max-w-7xl mx-auto px-4 sm:px-6 pb-28 mt-4 grid grid-cols-1 lg:grid-cols-3 gap-5">
 
-        <!-- Card 1: Recipe Basic Info -->
-        <div class="bg-white rounded-2xl p-5 border border-warm-200 card-shadow space-y-4">
-          <div class="flex items-center justify-between border-b border-warm-100 pb-3">
-            <div class="flex items-center gap-2 flex-1">
-              <input v-model="currentRecipe.name" placeholder="Recipe Name (e.g. French Strawberry Tart)" class="font-extrabold text-lg text-warm-900 bg-transparent border-b border-dashed border-warm-300 focus:border-amber-600 focus:outline-none px-1 w-full max-w-sm">
-            </div>
-            <select v-model="currentRecipe.category" class="text-xs bg-warm-50 border border-warm-200 rounded-lg px-2.5 py-1 text-warm-700 font-medium focus:outline-none">
-              <option value="Cakes & Pastries">Cakes & Pastries</option>
-              <option value="Artisan Breads">Artisan Breads</option>
-              <option value="Cookies & Bars">Cookies & Bars</option>
-              <option value="Pies & Tarts">Pies & Tarts</option>
-              <option value="Beverages & Sauces">Beverages & Sauces</option>
-              <option value="Savory & Kitchen">Savory & Kitchen</option>
-            </select>
-          </div>
+    <!-- LEFT / CENTER COLUMN -->
+    <div class="lg:col-span-2 space-y-5">
 
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
-            <div class="bg-warm-50/70 p-3 rounded-xl border border-warm-100">
-              <label class="text-xs font-semibold text-warm-600 block mb-1">Batch Yield (Servings)</label>
-              <div class="flex items-center gap-2">
-                <input type="number" min="1" step="1" v-model.number="currentRecipe.batchYield" class="w-full bg-white border border-warm-200 rounded-lg px-3 py-1.5 font-bold text-warm-900 text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none">
-                <span class="text-xs text-warm-500 font-medium">servings</span>
-              </div>
-            </div>
-
-            <div class="bg-warm-50/70 p-3 rounded-xl border border-warm-100">
-              <label class="text-xs font-semibold text-warm-600 block mb-1">Baking Loss (Evaporation %)</label>
-              <div class="flex items-center gap-2">
-                <input type="number" min="0" max="50" step="1" v-model.number="currentRecipe.bakingLoss" class="w-full bg-white border border-warm-200 rounded-lg px-3 py-1.5 font-bold text-warm-900 text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none">
-                <span class="text-xs text-warm-500 font-medium">%</span>
-              </div>
-            </div>
-
-            <div class="bg-warm-50/70 p-3 rounded-xl border border-warm-100">
-              <label class="text-xs font-semibold text-warm-600 block mb-1">Baking Notes / Specs</label>
-              <input v-model="currentRecipe.note" placeholder="e.g. 8-inch pan / 350°F 25min" class="w-full bg-white border border-warm-200 rounded-lg px-3 py-1.5 text-xs text-warm-800 focus:ring-2 focus:ring-amber-500 focus:outline-none">
-            </div>
+      <!-- Recipe Basics -->
+      <section class="card p-4 sm:p-5">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="font-bold text-base flex items-center gap-2"><i data-lucide="notebook-pen" class="w-4 h-4 text-caramel-600"></i> Recipe Details</h2>
+          <div class="flex items-center gap-1.5">
+            <button @click="duplicateRecipe" class="icon-btn btn-ghost" title="Duplicate Recipe"><i data-lucide="copy" class="w-4 h-4"></i></button>
+            <button @click="deleteRecipe(activeRecipe.id)" class="icon-btn btn-ghost text-red-600" title="Delete Recipe"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
           </div>
         </div>
 
-        <!-- Card 2: Ingredients Section -->
-        <div class="bg-white rounded-2xl p-5 border border-warm-200 card-shadow space-y-4">
-          <div class="flex items-center justify-between border-b border-warm-100 pb-3">
-            <div>
-              <h2 class="font-extrabold text-base text-warm-900 flex items-center gap-2">
-                <span>Ingredients & Raw Materials</span>
-                <span class="text-xs font-normal text-warm-500">({{ currentRecipe.ingredients.length }} items)</span>
-              </h2>
-              <p class="text-xs text-warm-500 mt-0.5">Supports auto-conversion between weight (g/kg/oz/lb) and volume (cup/tbsp/tsp)</p>
-            </div>
-            <button @click="showDensityModal = true" class="text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200/80 px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition">
-              <i data-lucide="book-open" class="w-3.5 h-3.5"></i> Density Library
+        <div class="mb-4">
+          <label class="field-label">Recipe Icon</label>
+          <div class="flex flex-wrap gap-2">
+            <button v-for="ic in RECIPE_ICONS" :key="ic" @click="activeRecipe.icon = ic"
+              class="w-11 h-11 rounded-xl text-xl flex items-center justify-center border transition"
+              :class="activeRecipe.icon === ic ? 'border-caramel-500 bg-caramel-50 ring-2 ring-caramel-500/40' : 'border-espresso/10 bg-white hover:border-caramel-500/40'">
+              {{ ic }}
             </button>
           </div>
+        </div>
 
-          <!-- Ingredients List Cards -->
-          <div class="space-y-3">
-            <div 
-              v-for="(ing, idx) in currentRecipe.ingredients" 
-              :key="ing.id"
-              class="p-4 rounded-xl border border-warm-200/90 bg-warm-50/40 hover:bg-warm-50/80 transition space-y-3"
-            >
-              <!-- Row 1: Name, Preset Dropdown, Delete -->
-              <div class="flex items-center justify-between gap-3">
-                <div class="flex-1 flex items-center gap-2">
-                  <span class="text-xs font-bold text-warm-400 w-5">#{{ idx + 1 }}</span>
-                  <input v-model="ing.name" placeholder="Ingredient Name (e.g. Unsalted Butter)" class="bg-white border border-warm-200 rounded-lg px-3 py-1 text-sm font-bold text-warm-900 focus:outline-none focus:ring-2 focus:ring-amber-500 flex-1">
-                  <select @change="applyPresetDensity(ing, $event)" class="text-xs bg-white border border-warm-200 text-warm-600 rounded-lg px-2 py-1 focus:outline-none">
-                    <option value="">Choose preset...</option>
-                    <option v-for="d in densityList" :key="d.name" :value="d.name">{{ d.name }} ({{ d.density }}g/ml)</option>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div class="sm:col-span-3">
+            <label class="field-label">Recipe Name</label>
+            <input v-model="activeRecipe.name" type="text" class="field-input" placeholder="e.g. French Strawberry Cheese Tart">
+          </div>
+          <div>
+            <label class="field-label">Batch Yield (Servings)</label>
+            <input v-model.number="activeRecipe.servings" type="number" min="1" step="1" class="field-input num">
+          </div>
+          <div>
+            <label class="field-label">Baking Loss (Water Evaporation %)</label>
+            <input v-model.number="activeRecipe.bakingLossPct" type="number" min="0" max="90" step="0.5" class="field-input num">
+          </div>
+          <div>
+            <label class="field-label">Est. Final Baked Weight</label>
+            <div class="field-input flex items-center bg-espresso/[0.03] text-espresso/70 num">{{ fmtNum(finalBakedWeightG,0) }} g</div>
+          </div>
+        </div>
+        <p class="text-xs text-espresso/45 mt-3">Approx. weight per serving after baking loss: <span class="num font-semibold text-espresso/70">{{ fmtNum(weightPerServingG,1) }} g</span></p>
+      </section>
+
+      <!-- Ingredients -->
+      <section class="card p-4 sm:p-5">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="font-bold text-base flex items-center gap-2"><i data-lucide="wheat" class="w-4 h-4 text-caramel-600"></i> Ingredients &amp; Raw Materials</h2>
+          <span class="text-xs text-espresso/45 num">{{ activeRecipe.ingredients.length }} item(s)</span>
+        </div>
+
+        <div class="space-y-3">
+          <div v-for="(ing, idx) in activeRecipe.ingredients" :key="ing.id" class="rounded-xl border border-espresso/10 bg-oatmeal/60 p-3 sm:p-4">
+            <div class="flex items-start gap-2 mb-3">
+              <div class="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <div>
+                  <label class="field-label">Preset Ingredient</label>
+                  <select v-model="ing.presetKey" @change="applyPreset(ing)" class="field-input">
+                    <option value="">Custom Ingredient…</option>
+                    <option v-for="p in DENSITY_LIBRARY" :key="p.name" :value="p.name">{{ p.name }}</option>
                   </select>
                 </div>
-                <button @click="removeIngredient(idx)" class="text-warm-400 hover:text-red-600 p-1 rounded transition" title="Delete ingredient">
-                  <i data-lucide="trash-2" class="w-4 h-4"></i>
-                </button>
-              </div>
-
-              <!-- Row 2: Purchase Spec & Price VS Recipe Usage -->
-              <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
                 <div>
-                  <label class="text-warm-500 font-semibold block mb-1">Package Price ({{ currency }})</label>
-                  <input type="number" min="0" step="0.01" v-model.number="ing.purchasePrice" class="w-full bg-white border border-warm-200 rounded-lg px-2.5 py-1.5 font-bold text-warm-900 focus:ring-2 focus:ring-amber-500 focus:outline-none">
-                </div>
-
-                <div>
-                  <label class="text-warm-500 font-semibold block mb-1">Package Size</label>
-                  <div class="flex items-center gap-1">
-                    <input type="number" min="0.01" step="0.1" v-model.number="ing.purchaseQty" class="w-16 bg-white border border-warm-200 rounded-lg px-2.5 py-1.5 font-bold text-warm-900 focus:ring-2 focus:ring-amber-500 focus:outline-none">
-                    <select v-model="ing.purchaseUnit" class="bg-white border border-warm-200 rounded-lg px-1.5 py-1.5 text-warm-700 font-medium focus:outline-none">
-                      <option value="g">g</option>
-                      <option value="kg">kg</option>
-                      <option value="oz">oz</option>
-                      <option value="lb">lb</option>
-                      <option value="ml">ml</option>
-                      <option value="l">L</option>
-                      <option value="pcs">pcs</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div>
-                  <label class="text-warm-500 font-semibold block mb-1">Recipe Usage</label>
-                  <div class="flex items-center gap-1">
-                    <input type="number" min="0" step="0.1" v-model.number="ing.useQty" class="w-16 bg-white border border-warm-200 rounded-lg px-2.5 py-1.5 font-bold text-warm-900 focus:ring-2 focus:ring-amber-500 focus:outline-none">
-                    <select v-model="ing.useUnit" class="bg-white border border-warm-200 rounded-lg px-1.5 py-1.5 text-warm-700 font-medium focus:outline-none">
-                      <option value="g">g (gram)</option>
-                      <option value="kg">kg (kilogram)</option>
-                      <option value="oz">oz (ounce)</option>
-                      <option value="lb">lb (pound)</option>
-                      <option value="ml">ml (milliliter)</option>
-                      <option value="cup">cup (US cup)</option>
-                      <option value="tbsp">tbsp (tablespoon)</option>
-                      <option value="tsp">tsp (teaspoon)</option>
-                      <option value="pcs">pcs (count)</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div class="bg-amber-50/60 p-2 rounded-lg border border-amber-100 flex flex-col justify-center">
-                  <span class="text-amber-800/80 font-medium">Line Item Cost</span>
-                  <span class="font-extrabold text-amber-900 text-sm tabular-nums">
-                    {{ currency }}{{ calcIngredientCost(ing).toFixed(2) }}
-                  </span>
+                  <label class="field-label">Ingredient Name</label>
+                  <input v-model="ing.name" type="text" class="field-input" placeholder="e.g. Unsalted Butter">
                 </div>
               </div>
-
-              <!-- Row 3: Yield % & Density -->
-              <div class="flex items-center justify-between text-xs text-warm-500 pt-1 border-t border-dashed border-warm-200">
-                <div class="flex items-center gap-3">
-                  <label class="flex items-center gap-1 cursor-pointer">
-                    <span>Yield Rate:</span>
-                    <input type="number" min="10" max="100" v-model.number="ing.yieldPercent" class="w-12 bg-white border border-warm-200 rounded px-1 py-0.5 text-center font-bold text-warm-800">
-                    <span>%</span>
-                    <span v-if="ing.yieldPercent < 100" class="text-amber-700 font-semibold">({{ 100 - ing.yieldPercent }}% trim loss)</span>
-                  </label>
-                  <span class="text-warm-300">•</span>
-                  <label class="flex items-center gap-1">
-                    <span>Density:</span>
-                    <input type="number" step="0.01" min="0.1" v-model.number="ing.density" class="w-12 bg-white border border-warm-200 rounded px-1 py-0.5 text-center font-bold text-warm-800">
-                    <span>g/ml</span>
-                  </label>
-                </div>
-                <div class="text-warm-400 text-2xs">
-                  Effective Unit: {{ currency }}{{ (calcIngredientUnitCost(ing) * 1000).toFixed(2) }}/kg
-                </div>
-              </div>
-
-            </div>
-          </div>
-
-          <button @click="addIngredient" class="w-full py-2.5 bg-warm-100/80 hover:bg-warm-100 text-warm-800 border border-dashed border-warm-300 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition">
-            <i data-lucide="plus-circle" class="w-4 h-4 text-amber-600"></i> Add Ingredient Line
-          </button>
-        </div>
-
-        <!-- Card 3: Packaging & Supplies -->
-        <div class="bg-white rounded-2xl p-5 border border-warm-200 card-shadow space-y-4">
-          <div class="flex items-center justify-between border-b border-warm-100 pb-3">
-            <div>
-              <h2 class="font-extrabold text-base text-warm-900 flex items-center gap-2">
-                <span>Packaging & Supplies</span>
-                <span class="text-xs font-normal text-warm-500">({{ currentRecipe.packaging.length }} items)</span>
-              </h2>
-              <p class="text-xs text-warm-500 mt-0.5">Boxes, ribbon, greaseproof liners, tags, and brand stickers</p>
-            </div>
-            <button @click="addPackaging" class="text-xs font-bold text-warm-700 hover:text-warm-900 bg-warm-50 hover:bg-warm-100 border border-warm-200 px-2.5 py-1 rounded-lg flex items-center gap-1 transition">
-              <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add Packaging
-            </button>
-          </div>
-
-          <div class="space-y-2">
-            <div v-for="(pkg, idx) in currentRecipe.packaging" :key="pkg.id" class="flex items-center gap-3 p-2.5 bg-warm-50/50 rounded-xl border border-warm-100 text-xs">
-              <input v-model="pkg.name" placeholder="Packaging Item (e.g. 8-inch Gold Cake Box)" class="flex-1 bg-white border border-warm-200 rounded-lg px-2.5 py-1 font-semibold text-warm-900 focus:outline-none focus:ring-2 focus:ring-amber-500">
-              <div class="flex items-center gap-1">
-                <span class="text-warm-500 font-medium">Unit Cost: {{ currency }}</span>
-                <input type="number" min="0" step="0.05" v-model.number="pkg.cost" class="w-20 bg-white border border-warm-200 rounded-lg px-2 py-1 font-bold text-warm-900 focus:outline-none focus:ring-2 focus:ring-amber-500">
-              </div>
-              <button @click="removePackaging(idx)" class="text-warm-400 hover:text-red-600 p-1 transition" title="Delete packaging">
-                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+              <button @click="removeIngredient(idx)" class="icon-btn btn-ghost text-red-600 mt-5 shrink-0" title="Remove Ingredient">
+                <i data-lucide="trash-2" class="w-4 h-4"></i>
               </button>
             </div>
-          </div>
-        </div>
 
-        <!-- Card 4: Labor & Kitchen Overhead -->
-        <div class="bg-white rounded-2xl p-5 border border-warm-200 card-shadow space-y-4">
-          <div class="border-b border-warm-100 pb-3">
-            <h2 class="font-extrabold text-base text-warm-900">Labor Time & Kitchen Overhead</h2>
-            <p class="text-xs text-warm-500 mt-0.5">Factor in prep labor hours, electricity, oven gas, and equipment depreciation</p>
-          </div>
-
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div class="p-3.5 bg-warm-50/60 rounded-xl border border-warm-100 space-y-2">
-              <span class="text-xs font-bold text-warm-800 flex items-center gap-1.5">
-                <i data-lucide="clock" class="w-3.5 h-3.5 text-amber-600"></i> Labor Allocation
-              </span>
-              <div class="grid grid-cols-2 gap-2 text-xs">
-                <div>
-                  <label class="text-warm-500 block mb-1">Prep Time (Minutes)</label>
-                  <input type="number" min="0" step="5" v-model.number="currentRecipe.laborMinutes" class="w-full bg-white border border-warm-200 rounded-lg px-2.5 py-1 font-bold text-warm-900 focus:outline-none">
-                </div>
-                <div>
-                  <label class="text-warm-500 block mb-1">Hourly Rate ({{ currency }}/hr)</label>
-                  <input type="number" min="0" step="1" v-model.number="currentRecipe.hourlyRate" class="w-full bg-white border border-warm-200 rounded-lg px-2.5 py-1 font-bold text-warm-900 focus:outline-none">
-                </div>
-              </div>
-              <div class="text-2xs text-warm-500 text-right pt-1">
-                Batch Labor Cost: {{ currency }}{{ ((currentRecipe.laborMinutes / 60) * currentRecipe.hourlyRate).toFixed(2) }}
-              </div>
-            </div>
-
-            <div class="p-3.5 bg-warm-50/60 rounded-xl border border-warm-100 space-y-2">
-              <span class="text-xs font-bold text-warm-800 flex items-center gap-1.5">
-                <i data-lucide="zap" class="w-3.5 h-3.5 text-amber-600"></i> Energy & Overhead
-              </span>
-              <div class="text-xs space-y-2">
-                <div class="flex items-center justify-between">
-                  <label class="text-warm-600">Batch Fixed Overhead ({{ currency }}):</label>
-                  <input type="number" min="0" step="0.5" v-model.number="currentRecipe.fixedOverhead" class="w-24 bg-white border border-warm-200 rounded-lg px-2.5 py-1 font-bold text-warm-900 text-right focus:outline-none">
-                </div>
-                <div class="text-2xs text-warm-400">
-                  Standard rule of thumb: $1.50 ~ $3.00 oven electricity per bake
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- RIGHT COLUMN: Real-time Pricing Dashboard (Col 5) -->
-      <div class="lg:col-span-5">
-        <div class="sticky top-20 space-y-6">
-
-          <!-- Main Result Board -->
-          <div class="bg-white rounded-3xl p-6 border-2 border-amber-200/90 card-shadow space-y-6">
-            
-            <div class="flex items-center justify-between border-b border-warm-100 pb-4">
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
               <div>
-                <span class="text-xs font-bold text-amber-800 uppercase tracking-wider">Pricing & Cost Analysis</span>
-                <h3 class="font-extrabold text-xl text-warm-900">{{ currentRecipe.name }}</h3>
+                <label class="field-label">Purchase Price ($)</label>
+                <input v-model.number="ing.purchasePrice" type="number" min="0" step="0.01" class="field-input num">
               </div>
-              <div class="text-right">
-                <span class="text-xs text-warm-500 block">Unit Ratio</span>
-                <span class="font-extrabold text-sm text-warm-800">1 / {{ currentRecipe.batchYield }} Servings</span>
-              </div>
-            </div>
-
-            <!-- Big Three Dashboard Metrics -->
-            <div class="grid grid-cols-3 gap-2 text-center">
-              <div class="bg-warm-50 p-3 rounded-2xl border border-warm-200/80">
-                <span class="text-2xs font-bold text-warm-500 block mb-1">Unit Total Cost</span>
-                <span class="text-xl sm:text-2xl font-extrabold text-warm-900 tabular-nums">
-                  {{ currency }}{{ summary.unitTotalCost.toFixed(2) }}
-                </span>
-              </div>
-
-              <div :class="foodCostStatusClass" class="p-3 rounded-2xl border transition">
-                <span class="text-2xs font-bold block mb-1">Food Cost %</span>
-                <span class="text-xl sm:text-2xl font-extrabold tabular-nums">
-                  {{ summary.actualFoodCostPercent.toFixed(1) }}%
-                </span>
-              </div>
-
-              <div class="bg-emerald-50/80 p-3 rounded-2xl border border-emerald-200/80 text-emerald-950">
-                <span class="text-2xs font-bold text-emerald-700 block mb-1">Suggested Price</span>
-                <span class="text-xl sm:text-2xl font-extrabold text-emerald-700 tabular-nums">
-                  {{ currency }}{{ summary.suggestedPrice.toFixed(2) }}
-                </span>
-              </div>
-            </div>
-
-            <!-- Cost Structure Breakdown Stack -->
-            <div class="space-y-2.5 pt-2">
-              <div class="flex justify-between text-xs font-semibold text-warm-600">
-                <span>Cost Structure Breakdown:</span>
-                <span class="text-warm-800 font-bold">Total: {{ currency }}{{ summary.unitTotalCost.toFixed(2) }}</span>
-              </div>
-
-              <div class="h-3 w-full bg-warm-100 rounded-full overflow-hidden flex">
-                <div :style="{ width: summary.ingShare + '%' }" class="bg-amber-500" title="Ingredients"></div>
-                <div :style="{ width: summary.pkgShare + '%' }" class="bg-amber-300" title="Packaging"></div>
-                <div :style="{ width: summary.laborShare + '%' }" class="bg-stone-500" title="Labor"></div>
-                <div :style="{ width: summary.overheadShare + '%' }" class="bg-stone-300" title="Overhead"></div>
-              </div>
-
-              <div class="grid grid-cols-2 gap-2 text-2xs pt-1">
-                <div class="flex items-center gap-1.5">
-                  <span class="w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0"></span>
-                  <span class="text-warm-600">Ingredients:</span>
-                  <span class="font-bold text-warm-900 ml-auto">{{ currency }}{{ summary.unitIngCost.toFixed(2) }}</span>
-                </div>
-                <div class="flex items-center gap-1.5">
-                  <span class="w-2.5 h-2.5 rounded-full bg-amber-300 shrink-0"></span>
-                  <span class="text-warm-600">Packaging:</span>
-                  <span class="font-bold text-warm-900 ml-auto">{{ currency }}{{ summary.unitPkgCost.toFixed(2) }}</span>
-                </div>
-                <div class="flex items-center gap-1.5">
-                  <span class="w-2.5 h-2.5 rounded-full bg-stone-500 shrink-0"></span>
-                  <span class="text-warm-600">Labor Time:</span>
-                  <span class="font-bold text-warm-900 ml-auto">{{ currency }}{{ summary.unitLaborCost.toFixed(2) }}</span>
-                </div>
-                <div class="flex items-center gap-1.5">
-                  <span class="w-2.5 h-2.5 rounded-full bg-stone-300 shrink-0"></span>
-                  <span class="text-warm-600">Overhead:</span>
-                  <span class="font-bold text-warm-900 ml-auto">{{ currency }}{{ summary.unitOverheadCost.toFixed(2) }}</span>
-                </div>
-              </div>
-            </div>
-
-            <hr class="border-warm-100">
-
-            <!-- Interactive Pricing Sliders -->
-            <div class="space-y-4">
               <div>
-                <div class="flex justify-between items-center text-xs mb-1.5">
-                  <span class="font-bold text-warm-800">Target Food Cost %</span>
-                  <span class="font-extrabold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200/60">
-                    {{ currentRecipe.targetFoodCostPercent }}% (Markup: {{ (100 / currentRecipe.targetFoodCostPercent).toFixed(2) }}x)
-                  </span>
-                </div>
-                <input 
-                  type="range" 
-                  min="15" 
-                  max="50" 
-                  step="1" 
-                  v-model.number="currentRecipe.targetFoodCostPercent" 
-                  class="w-full accent-amber-600 cursor-pointer h-2 bg-warm-200 rounded-lg"
-                >
-                <div class="flex justify-between text-2xs text-warm-400 mt-1">
-                  <span>15% (Premium Artisanal)</span>
-                  <span class="text-emerald-700 font-semibold">25%~32% (Standard Benchmark)</span>
-                  <span>50% (Thin Margin)</span>
+                <label class="field-label">Package Size</label>
+                <div class="flex gap-1.5">
+                  <input v-model.number="ing.packageSize" type="number" min="0" step="0.01" class="field-input num w-1/2">
+                  <select v-model="ing.packageUnit" class="field-input w-1/2">
+                    <optgroup label="Weight">
+                      <option v-for="u in WEIGHT_UNITS" :key="u" :value="u">{{ u }}</option>
+                    </optgroup>
+                    <optgroup label="Volume">
+                      <option v-for="u in VOLUME_UNITS" :key="u" :value="u">{{ u }}</option>
+                    </optgroup>
+                  </select>
                 </div>
               </div>
-
-              <!-- Custom Selling Price Override -->
-              <div class="bg-warm-50/80 p-3.5 rounded-2xl border border-warm-200/80 space-y-2">
-                <div class="flex items-center justify-between">
-                  <label class="text-xs font-bold text-warm-800">Custom Retail Price ({{ currency }})</label>
-                  <input 
-                    type="number" 
-                    min="0" 
-                    step="0.1" 
-                    v-model.number="currentRecipe.customPrice" 
-                    placeholder="e.g. 6.50" 
-                    class="w-28 bg-white border border-warm-300 rounded-lg px-3 py-1 font-extrabold text-emerald-800 text-right focus:outline-none focus:ring-2 focus:ring-amber-500"
-                  >
+              <div>
+                <label class="field-label">Recipe Usage</label>
+                <div class="flex gap-1.5">
+                  <input v-model.number="ing.usageAmount" type="number" min="0" step="0.01" class="field-input num w-1/2">
+                  <select v-model="ing.usageUnit" class="field-input w-1/2">
+                    <optgroup label="Weight">
+                      <option v-for="u in WEIGHT_UNITS" :key="u" :value="u">{{ u }}</option>
+                    </optgroup>
+                    <optgroup label="Volume">
+                      <option v-for="u in VOLUME_UNITS" :key="u" :value="u">{{ u }}</option>
+                    </optgroup>
+                  </select>
                 </div>
-                <div class="flex justify-between text-xs pt-1 border-t border-dashed border-warm-200">
-                  <span class="text-warm-500">Net Profit per Serving:</span>
-                  <span class="font-extrabold text-emerald-700 tabular-nums">
-                    +{{ currency }}{{ summary.unitNetProfit.toFixed(2) }} (Margin {{ summary.grossMarginPercent.toFixed(1) }}%)
-                  </span>
-                </div>
-                <div class="flex justify-between text-xs">
-                  <span class="text-warm-500">Expected Total Batch Profit:</span>
-                  <span class="font-extrabold text-warm-900 tabular-nums">
-                    +{{ currency }}{{ (summary.unitNetProfit * currentRecipe.batchYield).toFixed(2) }}
-                  </span>
-                </div>
+              </div>
+              <div>
+                <label class="field-label">Yield / Trim %</label>
+                <input v-model.number="ing.yieldPct" type="number" min="1" max="100" step="1" class="field-input num">
               </div>
             </div>
 
-            <!-- Action Buttons -->
-            <div class="grid grid-cols-2 gap-3 pt-2">
-              <button @click="openExportModal" class="w-full py-3 bg-amber-600 hover:bg-amber-700 active:scale-95 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 shadow-sm shadow-amber-600/30 transition">
-                <i data-lucide="printer" class="w-4 h-4"></i> Export Printable Card
-              </button>
-              <button @click="copyPriceSummary" class="w-full py-3 bg-warm-800 hover:bg-warm-900 active:scale-95 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition">
-                <i data-lucide="copy" class="w-4 h-4"></i> Copy Summary
-              </button>
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 mt-2.5">
+              <div>
+                <label class="field-label">Density (g/ml)</label>
+                <input v-model.number="ing.density" type="number" min="0.01" step="0.01" class="field-input num">
+              </div>
+              <div class="flex flex-col justify-end text-right">
+                <label class="field-label text-right">Unit Cost</label>
+                <div class="h-11 flex items-center justify-end text-sm font-semibold num">{{ fmtMoney(unitCostPerGram(ing)) }} / g</div>
+              </div>
+              <div class="flex flex-col justify-end text-right">
+                <label class="field-label text-right">Line Cost</label>
+                <div class="h-11 flex items-center justify-end text-base font-bold text-caramel-700 num">{{ fmtMoney(ingredientLineCost(ing)) }}</div>
+              </div>
             </div>
-
+            <p class="text-[11px] text-espresso/40 mt-2 num">≈ {{ fmtNum(ingredientUsageGrams(ing),1) }} g &nbsp;/&nbsp; {{ fmtNum(ingredientUsageMl(ing),1) }} ml used in this recipe</p>
           </div>
-
-          <!-- Bottom Trust & Tips Badge -->
-          <div class="bg-amber-50/50 rounded-2xl p-4 border border-amber-200/60 text-xs space-y-2 text-warm-600">
-            <div class="font-bold text-amber-900 flex items-center gap-1.5">
-              <i data-lucide="sparkles" class="w-4 h-4 text-amber-600"></i> Pro Bakery Pricing Rule
-            </div>
-            <p class="leading-relaxed">
-              For artisan & cottage bakeries, ideal food cost percentages range between <strong>25% and 30%</strong>. For intricate custom handwork (sugar flowers, royal icing piping), ensure labor hours are fully captured or use a <strong>3.5x ~ 4.5x</strong> markup multiplier.
-            </p>
-          </div>
-
         </div>
-      </div>
+
+        <button @click="addIngredient" class="btn btn-secondary mt-3.5 w-full sm:w-auto">
+          <i data-lucide="plus" class="w-4 h-4"></i> Add Ingredient
+        </button>
+
+        <div class="flex items-center justify-between mt-4 pt-3 border-t border-espresso/10">
+          <span class="text-sm font-semibold text-espresso/70">Ingredients Subtotal</span>
+          <span class="text-lg font-bold num text-caramel-700">{{ fmtMoney(ingredientsTotal) }}</span>
+        </div>
+      </section>
+
+      <!-- Packaging -->
+      <section class="card p-4 sm:p-5">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="font-bold text-base flex items-center gap-2"><i data-lucide="package" class="w-4 h-4 text-caramel-600"></i> Packaging &amp; Supplies</h2>
+          <span class="text-xs text-espresso/45 num">{{ activeRecipe.packaging.length }} item(s)</span>
+        </div>
+
+        <div class="space-y-2.5">
+          <div v-for="(pk, idx) in activeRecipe.packaging" :key="pk.id" class="grid grid-cols-12 gap-2.5 items-end">
+            <div class="col-span-12 sm:col-span-5">
+              <label class="field-label">Item Name</label>
+              <input v-model="pk.name" type="text" class="field-input" placeholder="e.g. Cake Box">
+            </div>
+            <div class="col-span-4 sm:col-span-2">
+              <label class="field-label">Unit Cost ($)</label>
+              <input v-model.number="pk.unitCost" type="number" min="0" step="0.01" class="field-input num">
+            </div>
+            <div class="col-span-4 sm:col-span-2">
+              <label class="field-label">Quantity</label>
+              <input v-model.number="pk.qty" type="number" min="0" step="1" class="field-input num">
+            </div>
+            <div class="col-span-3 sm:col-span-2 text-right">
+              <label class="field-label text-right">Line Cost</label>
+              <div class="h-11 flex items-center justify-end font-semibold num">{{ fmtMoney((pk.unitCost||0) * (pk.qty||0)) }}</div>
+            </div>
+            <div class="col-span-1 flex justify-end">
+              <button @click="removePackaging(idx)" class="icon-btn btn-ghost text-red-600"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+            </div>
+          </div>
+        </div>
+
+        <button @click="addPackaging" class="btn btn-secondary mt-3.5 w-full sm:w-auto">
+          <i data-lucide="plus" class="w-4 h-4"></i> Add Packaging Item
+        </button>
+
+        <div class="flex items-center justify-between mt-4 pt-3 border-t border-espresso/10">
+          <span class="text-sm font-semibold text-espresso/70">Packaging Subtotal</span>
+          <span class="text-lg font-bold num text-caramel-700">{{ fmtMoney(packagingTotal) }}</span>
+        </div>
+      </section>
+
+      <!-- Labor & Overhead -->
+      <section class="card p-4 sm:p-5">
+        <h2 class="font-bold text-base flex items-center gap-2 mb-4"><i data-lucide="clock" class="w-4 h-4 text-caramel-600"></i> Labor &amp; Kitchen Overhead</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div>
+            <label class="field-label">Prep Time (minutes)</label>
+            <input v-model.number="activeRecipe.laborMinutes" type="number" min="0" step="1" class="field-input num">
+          </div>
+          <div>
+            <label class="field-label">Hourly Rate ($/hr)</label>
+            <input v-model.number="activeRecipe.hourlyRate" type="number" min="0" step="0.5" class="field-input num">
+          </div>
+          <div>
+            <label class="field-label">Kitchen Overhead ($ / batch)</label>
+            <input v-model.number="activeRecipe.overheadAmount" type="number" min="0" step="0.1" class="field-input num">
+          </div>
+        </div>
+        <div class="flex items-center justify-between mt-4 pt-3 border-t border-espresso/10 flex-wrap gap-2">
+          <span class="text-sm font-semibold text-espresso/70">Labor Cost: <span class="num">{{ fmtMoney(laborCost) }}</span></span>
+          <span class="text-sm font-semibold text-espresso/70">Overhead: <span class="num">{{ fmtMoney(overheadCost) }}</span></span>
+        </div>
+      </section>
 
     </div>
+
+    <!-- RIGHT / DASHBOARD COLUMN -->
+    <aside class="lg:col-span-1">
+      <div class="lg:sticky lg:top-24 space-y-5">
+
+        <!-- Totals -->
+        <section class="card p-4 sm:p-5 bg-espresso text-oatmeal border-espresso">
+          <h2 class="font-bold text-base flex items-center gap-2 mb-3 text-white"><i data-lucide="calculator" class="w-4 h-4 text-caramel-400"></i> Pricing Dashboard</h2>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="rounded-xl bg-white/10 p-3">
+              <p class="text-[11px] uppercase tracking-wide text-oatmeal/60">Total Batch Cost</p>
+              <p class="text-xl font-extrabold num mt-0.5">{{ fmtMoney(totalBatchCost) }}</p>
+            </div>
+            <div class="rounded-xl bg-white/10 p-3">
+              <p class="text-[11px] uppercase tracking-wide text-oatmeal/60">Cost / Serving</p>
+              <p class="text-xl font-extrabold num mt-0.5">{{ fmtMoney(costPerServing) }}</p>
+            </div>
+            <div class="rounded-xl bg-white/10 p-3">
+              <p class="text-[11px] uppercase tracking-wide text-oatmeal/60">Cost / 100g (baked)</p>
+              <p class="text-lg font-bold num mt-0.5">{{ fmtMoney(costPer100g) }}</p>
+            </div>
+            <div class="rounded-xl bg-white/10 p-3">
+              <p class="text-[11px] uppercase tracking-wide text-oatmeal/60">Weight / Serving</p>
+              <p class="text-lg font-bold num mt-0.5">{{ fmtNum(weightPerServingG,1) }} g</p>
+            </div>
+          </div>
+
+          <!-- Cost Breakdown Bar -->
+          <div class="mt-4">
+            <p class="text-[11px] uppercase tracking-wide text-oatmeal/60 mb-1.5">Cost Breakdown</p>
+            <div class="w-full h-2.5 rounded-full overflow-hidden flex bg-white/10">
+              <div v-for="b in breakdown" :key="b.label" :style="{ width: Math.max(0,b.pct) + '%', backgroundColor: b.color }"></div>
+            </div>
+            <div class="grid grid-cols-2 gap-x-3 gap-y-1 mt-2">
+              <div v-for="b in breakdown" :key="b.label" class="flex items-center gap-1.5 text-[11px] text-oatmeal/70">
+                <span class="w-2 h-2 rounded-full shrink-0" :style="{ backgroundColor: b.color }"></span>
+                <span class="flex-1 truncate">{{ b.label }}</span>
+                <span class="num">{{ fmtNum(b.pct,0) }}%</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Target Food Cost / Suggested Price -->
+        <section class="card p-4 sm:p-5">
+          <div class="flex items-center justify-between mb-1">
+            <label class="field-label mb-0">Target Food Cost %</label>
+            <span class="text-sm font-bold text-caramel-700 num">{{ fmtNum(activeRecipe.targetFoodCostPct,0) }}%</span>
+          </div>
+          <input type="range" min="5" max="60" step="1" v-model.number="activeRecipe.targetFoodCostPct"
+            class="caramel-slider" :style="{ '--fill': sliderFillPct + '%' }">
+          <div class="flex justify-between text-[10px] text-espresso/40 mt-1 mb-4">
+            <span>5%</span><span>60%</span>
+          </div>
+
+          <div class="rounded-xl bg-caramel-50 border border-caramel-200 p-3.5 text-center">
+            <p class="text-[11px] uppercase tracking-wide text-caramel-700/80">Suggested Retail Price</p>
+            <p class="text-3xl font-extrabold text-caramel-700 num mt-1">{{ fmtMoney(suggestedPrice) }}</p>
+            <p class="text-[11px] text-caramel-700/70 mt-1">per serving, at {{ fmtNum(activeRecipe.targetFoodCostPct,0) }}% food cost</p>
+          </div>
+        </section>
+
+        <!-- Custom Price & Net Profit -->
+        <section class="card p-4 sm:p-5">
+          <h2 class="font-bold text-base flex items-center gap-2 mb-3"><i data-lucide="tag" class="w-4 h-4 text-caramel-600"></i> Custom Price &amp; Net Profit</h2>
+          <label class="field-label">Custom Selling Price ($ / serving)</label>
+          <input v-model.number="activeRecipe.customPrice" type="number" min="0" step="0.01" class="field-input num text-lg font-bold">
+
+          <div class="grid grid-cols-3 gap-2.5 mt-3.5">
+            <div class="rounded-xl bg-oatmeal border border-espresso/10 p-2.5 text-center">
+              <p class="text-[10px] uppercase text-espresso/45">Food Cost %</p>
+              <p class="text-sm font-bold num mt-0.5">{{ fmtNum(foodCostPctCustom,1) }}%</p>
+            </div>
+            <div class="rounded-xl bg-oatmeal border border-espresso/10 p-2.5 text-center">
+              <p class="text-[10px] uppercase text-espresso/45">Net Profit</p>
+              <p class="text-sm font-bold num mt-0.5" :class="netProfitCustom >= 0 ? 'text-emerald-700' : 'text-red-600'">{{ fmtMoney(netProfitCustom) }}</p>
+            </div>
+            <div class="rounded-xl bg-oatmeal border border-espresso/10 p-2.5 text-center">
+              <p class="text-[10px] uppercase text-espresso/45">Gross Margin %</p>
+              <p class="text-sm font-bold num mt-0.5">{{ fmtNum(grossMarginCustom,1) }}%</p>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </aside>
   </main>
 
-  <!-- Modal 1: Density Reference Library -->
-  <div v-if="showDensityModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" @click.self="showDensityModal = false">
-    <div class="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl border border-warm-200 max-h-[85vh] flex flex-col">
-      <div class="flex items-center justify-between border-b border-warm-100 pb-3">
-        <div>
-          <h3 class="font-extrabold text-lg text-warm-900">Baking Ingredient Density Library</h3>
-          <p class="text-xs text-warm-500">Auto-converts 1 Cup / 1 Tbsp into exact weight in grams (g)</p>
-        </div>
-        <button @click="showDensityModal = false" class="text-warm-400 hover:text-warm-800 p-1">
-          <i data-lucide="x" class="w-5 h-5"></i>
-        </button>
+  <!-- ============ EXPORT MODAL ============ -->
+  <transition name="fade">
+  <div v-if="showExportModal" class="fixed inset-0 z-50 modal-backdrop flex items-center justify-center p-4" @click.self="showExportModal = false">
+    <div class="bg-oatmeal rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+      <div class="flex items-center justify-between px-5 py-4 border-b border-espresso/10">
+        <h3 class="font-bold text-base flex items-center gap-2"><i data-lucide="image-down" class="w-4 h-4 text-caramel-600"></i> Export Cost Card</h3>
+        <button @click="showExportModal = false" class="icon-btn btn-ghost"><i data-lucide="x" class="w-4 h-4"></i></button>
       </div>
 
-      <input v-model="densitySearch" placeholder="Search ingredient (e.g. Flour / Butter / Sugar)..." class="w-full bg-warm-50 border border-warm-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-amber-500">
+      <div class="p-5" id="printOnlyWrap">
+        <div id="exportCard" class="card p-5 bg-white">
+          <div class="flex items-center gap-3 pb-3 border-b border-espresso/10">
+            <div class="w-11 h-11 rounded-xl bg-caramel-500 flex items-center justify-center text-2xl">{{ activeRecipe.icon }}</div>
+            <div>
+              <p class="font-extrabold text-lg leading-tight">{{ activeRecipe.name || 'Untitled Recipe' }}</p>
+              <p class="text-xs text-espresso/50">Yields {{ activeRecipe.servings }} serving(s) · BakeCost Studio</p>
+            </div>
+          </div>
 
-      <div class="flex-1 overflow-y-auto space-y-1.5 pr-1">
-        <div 
-          v-for="d in filteredDensityList" 
-          :key="d.name" 
-          @click="addIngredientFromDensity(d)"
-          class="p-2.5 hover:bg-amber-50/80 rounded-xl border border-transparent hover:border-amber-200 flex items-center justify-between text-xs cursor-pointer transition"
-        >
-          <div>
-            <span class="font-bold text-warm-900 block">{{ d.name }}</span>
-            <span class="text-2xs text-warm-500">1 Cup ≈ {{ Math.round(236.59 * d.density) }}g | 1 Tbsp ≈ {{ (14.79 * d.density).toFixed(1) }}g</span>
+          <div class="grid grid-cols-2 gap-2.5 my-3.5">
+            <div class="rounded-xl bg-oatmeal p-3">
+              <p class="text-[10px] uppercase text-espresso/45">Total Batch Cost</p>
+              <p class="text-lg font-extrabold num">{{ fmtMoney(totalBatchCost) }}</p>
+            </div>
+            <div class="rounded-xl bg-oatmeal p-3">
+              <p class="text-[10px] uppercase text-espresso/45">Cost / Serving</p>
+              <p class="text-lg font-extrabold num">{{ fmtMoney(costPerServing) }}</p>
+            </div>
+            <div class="rounded-xl bg-caramel-50 p-3">
+              <p class="text-[10px] uppercase text-caramel-700/70">Suggested Price</p>
+              <p class="text-lg font-extrabold num text-caramel-700">{{ fmtMoney(suggestedPrice) }}</p>
+            </div>
+            <div class="rounded-xl bg-caramel-50 p-3">
+              <p class="text-[10px] uppercase text-caramel-700/70">Food Cost %</p>
+              <p class="text-lg font-extrabold num text-caramel-700">{{ fmtNum(activeRecipe.targetFoodCostPct,0) }}%</p>
+            </div>
           </div>
-          <div class="text-right">
-            <span class="font-extrabold text-amber-800 text-xs block">{{ d.density }} g/ml</span>
-            <span class="text-2xs text-amber-600 font-semibold">+ Add to Recipe</span>
-          </div>
+
+          <p class="text-xs font-semibold text-espresso/60 mb-1.5">Ingredients</p>
+          <ul class="text-xs divide-y divide-espresso/10 border-y border-espresso/10">
+            <li v-for="ing in activeRecipe.ingredients" :key="ing.id" class="flex justify-between py-1.5 num">
+              <span class="truncate pr-2">{{ ing.name || 'Unnamed ingredient' }}</span>
+              <span class="shrink-0">{{ fmtMoney(ingredientLineCost(ing)) }}</span>
+            </li>
+          </ul>
+
+          <p class="text-[10px] text-espresso/40 mt-3 text-center">Generated {{ todayStr }} · Made with BakeCost Studio</p>
         </div>
       </div>
 
-      <div class="pt-2 border-t border-warm-100 text-center">
-        <button @click="showDensityModal = false" class="w-full py-2.5 bg-warm-800 text-white font-bold text-xs rounded-xl">Close</button>
+      <div class="px-5 pb-5 flex flex-col sm:flex-row gap-2.5">
+        <button @click="downloadPng" class="btn btn-primary flex-1"><i data-lucide="download" class="w-4 h-4"></i> Download PNG</button>
+        <button @click="printCard" class="btn btn-secondary flex-1"><i data-lucide="printer" class="w-4 h-4"></i> Print / Save as PDF</button>
       </div>
     </div>
   </div>
+  </transition>
 
-  <!-- Modal 2: Export & Printable Sheet Preview -->
-  <div v-if="showExportModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 overflow-y-auto" @click.self="showExportModal = false">
-    <div class="bg-white rounded-3xl max-w-xl w-full p-6 space-y-5 shadow-2xl border border-warm-200 my-auto">
-      <div class="flex items-center justify-between border-b border-warm-100 pb-3">
-        <div>
-          <h3 class="font-extrabold text-lg text-warm-900">Printable Recipe Cost Sheet</h3>
-          <p class="text-xs text-warm-500">Save as high-resolution PNG image or print to PDF</p>
-        </div>
-        <button @click="showExportModal = false" class="text-warm-400 hover:text-warm-800 p-1">
-          <i data-lucide="x" class="w-5 h-5"></i>
-        </button>
+  <!-- ============ BACKUP / RESTORE MODAL ============ -->
+  <transition name="fade">
+  <div v-if="showBackupModal" class="fixed inset-0 z-50 modal-backdrop flex items-center justify-center p-4" @click.self="showBackupModal = false">
+    <div class="bg-oatmeal rounded-2xl max-w-md w-full shadow-2xl">
+      <div class="flex items-center justify-between px-5 py-4 border-b border-espresso/10">
+        <h3 class="font-bold text-base flex items-center gap-2"><i data-lucide="database" class="w-4 h-4 text-caramel-600"></i> Backup &amp; Restore</h3>
+        <button @click="showBackupModal = false" class="icon-btn btn-ghost"><i data-lucide="x" class="w-4 h-4"></i></button>
       </div>
+      <div class="p-5 space-y-3">
+        <p class="text-sm text-espresso/60">All recipes are saved automatically in your browser. Export a JSON backup to keep a copy or move your recipes to another device.</p>
 
-      <!-- Printable Area Target -->
-      <div id="printTarget" class="p-6 bg-[#FAF8F5] rounded-2xl border border-warm-300 space-y-4 text-warm-900 font-sans">
-        <div class="flex justify-between items-start border-b-2 border-warm-800 pb-3">
-          <div>
-            <span class="text-2xs font-extrabold tracking-widest text-amber-800 uppercase">BAKECOST STUDIO · RECIPE COST SHEET</span>
-            <h2 class="text-2xl font-black text-warm-900 mt-0.5">{{ currentRecipe.name }}</h2>
-            <p class="text-xs text-warm-500 mt-0.5">Category: {{ currentRecipe.category }} | Yield: {{ currentRecipe.batchYield }} servings</p>
-          </div>
-          <div class="text-right">
-            <span class="text-2xs text-warm-500 block">Date</span>
-            <span class="text-xs font-bold text-warm-800">{{ currentDateStr }}</span>
-          </div>
-        </div>
-
-        <table class="w-full text-xs text-left">
-          <thead>
-            <tr class="border-b border-warm-300 text-warm-600 font-bold">
-              <th class="py-1.5">Ingredient</th>
-              <th class="py-1.5 text-center">Usage</th>
-              <th class="py-1.5 text-center">Trim / Loss</th>
-              <th class="py-1.5 text-right">Cost</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-warm-200/60">
-            <tr v-for="ing in currentRecipe.ingredients" :key="ing.id">
-              <td class="py-1 font-semibold text-warm-900">{{ ing.name }}</td>
-              <td class="py-1 text-center text-warm-600">{{ ing.useQty }} {{ ing.useUnit }}</td>
-              <td class="py-1 text-center text-warm-500">{{ ing.yieldPercent < 100 ? (100 - ing.yieldPercent) + '%' : '-' }}</td>
-              <td class="py-1 text-right font-bold text-warm-900">{{ currency }}{{ calcIngredientCost(ing).toFixed(2) }}</td>
-            </tr>
-          </tbody>
-        </table>
-
-        <div class="bg-white p-3 rounded-xl border border-warm-200 text-xs space-y-1.5">
-          <div class="flex justify-between text-warm-600">
-            <span>Ingredients Subtotal:</span>
-            <span class="font-bold text-warm-900">{{ currency }}{{ summary.totalIngCost.toFixed(2) }}</span>
-          </div>
-          <div class="flex justify-between text-warm-600">
-            <span>Packaging & Supplies ({{ currentRecipe.packaging.length }} items):</span>
-            <span class="font-bold text-warm-900">{{ currency }}{{ (summary.unitPkgCost * currentRecipe.batchYield).toFixed(2) }}</span>
-          </div>
-          <div class="flex justify-between text-warm-600">
-            <span>Labor & Fixed Overhead:</span>
-            <span class="font-bold text-warm-900">{{ currency }}{{ ((summary.unitLaborCost + summary.unitOverheadCost) * currentRecipe.batchYield).toFixed(2) }}</span>
-          </div>
-          <div class="flex justify-between text-warm-900 font-black pt-1 border-t border-warm-100 text-sm">
-            <span>Total Batch Cost / Cost per Serving:</span>
-            <span class="text-amber-800">{{ currency }}{{ summary.batchTotalCost.toFixed(2) }} / {{ currency }}{{ summary.unitTotalCost.toFixed(2) }} ea</span>
-          </div>
-        </div>
-
-        <div class="flex justify-between items-center p-3 bg-amber-600 text-white rounded-xl">
-          <div>
-            <span class="text-2xs opacity-80 uppercase font-bold tracking-wider">Suggested Retail Price</span>
-            <div class="text-2xl font-black">{{ currency }}{{ summary.suggestedPrice.toFixed(2) }} <span class="text-xs font-normal opacity-90">/ serving</span></div>
-          </div>
-          <div class="text-right text-xs">
-            <div>Food Cost: <strong>{{ summary.actualFoodCostPercent.toFixed(1) }}%</strong></div>
-            <div>Net Profit: <strong>+{{ currency }}{{ summary.unitNetProfit.toFixed(2) }}</strong></div>
-          </div>
-        </div>
-
-        <div class="text-center text-2xs text-warm-400 pt-1">
-          Powered by BakeCost Studio · 100% Offline & Client-Side Calculation
-        </div>
-      </div>
-
-      <div class="grid grid-cols-2 gap-3 pt-2">
-        <button @click="downloadImageCard" :disabled="isDownloading" class="w-full py-3 bg-warm-800 hover:bg-warm-900 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition">
-          <i data-lucide="download" class="w-4 h-4"></i> {{ isDownloading ? 'Generating Image...' : 'Download Image (PNG)' }}
+        <button @click="exportJson" class="btn btn-secondary w-full justify-start">
+          <i data-lucide="upload" class="w-4 h-4"></i> Export All Recipes (JSON)
         </button>
-        <button @click="printCard" class="w-full py-3 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition">
-          <i data-lucide="printer" class="w-4 h-4"></i> Print / Save as PDF
+
+        <label class="btn btn-secondary w-full justify-start cursor-pointer">
+          <i data-lucide="folder-input" class="w-4 h-4"></i> Import Recipes (JSON)
+          <input type="file" accept="application/json" class="hidden" @change="importJson">
+        </label>
+
+        <button @click="resetToDefaults(true)" class="btn btn-danger w-full justify-start">
+          <i data-lucide="rotate-ccw" class="w-4 h-4"></i> Reset to Default Recipes
         </button>
       </div>
     </div>
   </div>
+  </transition>
 
-  <!-- Modal 3: Data Backup & Restore -->
-  <div v-if="showBackupModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" @click.self="showBackupModal = false">
-    <div class="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-warm-200">
-      <div class="flex items-center justify-between border-b border-warm-100 pb-3">
-        <h3 class="font-extrabold text-base text-warm-900">Backup & Restore Recipes</h3>
-        <button @click="showBackupModal = false" class="text-warm-400 hover:text-warm-800 p-1">
-          <i data-lucide="x" class="w-5 h-5"></i>
-        </button>
+  <!-- ============ TOASTS ============ -->
+  <div class="fixed bottom-4 right-4 z-[60] space-y-2 w-[calc(100%-2rem)] max-w-xs">
+    <transition-group name="fade">
+      <div v-for="t in toasts" :key="t.id" class="bg-espresso text-oatmeal text-sm rounded-xl px-4 py-3 shadow-lg">
+        {{ t.msg }}
       </div>
-
-      <p class="text-xs text-warm-600 leading-relaxed">
-        All recipes are securely stored in your local browser storage. You can export a JSON backup file to archive or import into another device.
-      </p>
-
-      <div class="space-y-3 pt-2">
-        <button @click="exportJsonBackup" class="w-full py-2.5 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5">
-          <i data-lucide="download" class="w-4 h-4"></i> Export Backup (JSON)
-        </button>
-
-        <div class="relative">
-          <input type="file" ref="fileInput" @change="importJsonBackup" accept=".json" class="hidden">
-          <button @click="$refs.fileInput.click()" class="w-full py-2.5 bg-warm-100 hover:bg-warm-200 text-warm-800 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5">
-            <i data-lucide="upload" class="w-4 h-4"></i> Import & Restore (JSON)
-          </button>
-        </div>
-
-        <button @click="resetToDefaults" class="w-full py-2 text-warm-400 hover:text-red-600 text-2xs font-semibold">
-          Reset to Factory Default Recipes
-        </button>
-      </div>
-    </div>
+    </transition-group>
   </div>
-
-  <!-- Toast Notification -->
-  <div 
-    v-if="toastMsg" 
-    class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-warm-900 text-white px-5 py-2.5 rounded-full text-xs font-bold shadow-xl flex items-center gap-2 animate-bounce"
-  >
-    <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400"></i>
-    <span>{{ toastMsg }}</span>
-  </div>
-
-  <!-- Footer -->
-  <footer class="border-t border-warm-200 bg-white py-6 mt-12 text-center text-xs text-warm-500">
-    <div class="max-w-7xl mx-auto px-4 space-y-1.5">
-      <p class="font-semibold text-warm-700">BakeCost Studio — Minimalist Recipe Costing & Food Margin Calculator</p>
-      <p class="text-2xs text-warm-400">Pure Client-Side Architecture · Zero Server Upload · 100% Offline Capable</p>
-    </div>
-  </footer>
 
 </div>
 
 <script>
-const { createApp, ref, computed, watch, onMounted, nextTick } = Vue;
-
-const DENSITY_DATA = [
-  { name: 'Cake Flour (Low Gluten)', density: 0.48 },
-  { name: 'All-Purpose Flour', density: 0.53 },
-  { name: 'Bread Flour (High Gluten)', density: 0.58 },
-  { name: 'Whole Wheat Flour', density: 0.51 },
-  { name: 'Granulated Sugar', density: 0.85 },
-  { name: 'Powdered Confectioners Sugar', density: 0.50 },
-  { name: 'Brown Sugar (Packed)', density: 0.80 },
-  { name: 'Unsalted Butter', density: 0.95 },
-  { name: 'Vegetable / Canola Oil', density: 0.92 },
-  { name: 'Whole Milk', density: 1.03 },
-  { name: 'Heavy Cream (35% Fat)', density: 0.98 },
-  { name: 'Whole Eggs (Liquid)', density: 1.02 },
-  { name: 'Water', density: 1.00 },
-  { name: 'Honey', density: 1.42 },
-  { name: 'Pure Maple Syrup', density: 1.37 },
-  { name: 'Mascarpone Cheese', density: 0.96 },
-  { name: 'Cream Cheese', density: 0.98 },
-  { name: 'Dutch Cocoa Powder', density: 0.42 },
-  { name: 'Matcha Green Tea Powder', density: 0.45 },
-  { name: 'Instant Dry Yeast', density: 0.65 },
-  { name: 'Baking Powder', density: 0.90 },
-  { name: 'Baking Soda', density: 0.95 },
-  { name: 'Fine Sea Salt', density: 1.15 },
-  { name: 'Vanilla Extract', density: 1.05 },
-  { name: 'Fresh Strawberries (Trimmed)', density: 0.65 },
-  { name: 'Fresh Blueberries', density: 0.68 },
-  { name: 'Pistachio Paste', density: 0.95 },
-  { name: 'Almond Flour', density: 0.46 },
-  { name: 'Dark Chocolate Chips (60-70%)', density: 0.75 },
-  { name: 'Belgian Dark Chocolate Block', density: 1.20 },
-  { name: 'Sweetened Condensed Milk', density: 1.29 },
-  { name: 'Gelatin Powder', density: 0.70 },
-  { name: 'Greek Yogurt (Plain)', density: 1.06 },
-  { name: 'Fresh Lemon Juice', density: 1.03 },
-  { name: 'Shredded Coconut', density: 0.35 },
-  { name: 'Ground Cinnamon', density: 0.45 }
-];
-
-function unitToGrams(qty, unit, density = 1.0) {
-  if (!qty || qty <= 0) return 0;
-  const u = (unit || 'g').toLowerCase();
-  switch (u) {
-    case 'g': return qty;
-    case 'kg': return qty * 1000;
-    case 'oz': return qty * 28.3495;
-    case 'lb': return qty * 453.592;
-    case 'ml': return qty * density;
-    case 'l': return qty * 1000 * density;
-    case 'cup': return qty * 236.59 * density;
-    case 'tbsp': return qty * 14.79 * density;
-    case 'tsp': return qty * 4.93 * density;
-    case 'pcs': return qty;
-    default: return qty;
-  }
-}
-
-const DEFAULT_RECIPES = [
-  {
-    id: 'r_01',
-    name: 'French Strawberry Cheese Tart',
-    category: 'Pies & Tarts',
-    batchYield: 8,
-    bakingLoss: 8,
-    targetFoodCostPercent: 28,
-    customPrice: 5.80,
-    laborMinutes: 45,
-    hourlyRate: 25,
-    fixedOverhead: 2.00,
-    note: '8-inch ring mold / 340°F 25min bake',
-    ingredients: [
-      { id: 'i1', name: 'President Unsalted Butter', purchasePrice: 5.50, purchaseQty: 500, purchaseUnit: 'g', useQty: 120, useUnit: 'g', yieldPercent: 100, density: 0.95 },
-      { id: 'i2', name: 'Cake Flour', purchasePrice: 4.20, purchaseQty: 1, purchaseUnit: 'kg', useQty: 180, useUnit: 'g', yieldPercent: 100, density: 0.48 },
-      { id: 'i3', name: 'Granulated Sugar', purchasePrice: 3.50, purchaseQty: 1, purchaseUnit: 'kg', useQty: 65, useUnit: 'g', yieldPercent: 100, density: 0.85 },
-      { id: 'i4', name: 'Italian Mascarpone Cheese', purchasePrice: 8.90, purchaseQty: 500, purchaseUnit: 'g', useQty: 250, useUnit: 'g', yieldPercent: 100, density: 0.96 },
-      { id: 'i5', name: 'Fresh Strawberries (Hulled)', purchasePrice: 6.99, purchaseQty: 1, purchaseUnit: 'lb', useQty: 300, useUnit: 'g', yieldPercent: 85, density: 0.65 },
-      { id: 'i6', name: 'Heavy Cream 35%', purchasePrice: 7.20, purchaseQty: 1, purchaseUnit: 'l', useQty: 150, useUnit: 'ml', yieldPercent: 100, density: 0.98 }
-    ],
-    packaging: [
-      { id: 'p1', name: '8-inch Gold Trim Cake Box', cost: 1.20 },
-      { id: 'p2', name: 'Satin Ribbon & Brand Sticker', cost: 0.35 }
-    ]
-  },
-  {
-    id: 'r_02',
-    name: 'Sea Salt Dark Chocolate Cookies',
-    category: 'Cookies & Bars',
-    batchYield: 18,
-    bakingLoss: 6,
-    targetFoodCostPercent: 25,
-    customPrice: 2.80,
-    laborMinutes: 30,
-    hourlyRate: 20,
-    fixedOverhead: 1.50,
-    note: '18 cookies per batch / 70g raw dough per unit',
-    ingredients: [
-      { id: 'i21', name: 'Cultured Unsalted Butter', purchasePrice: 11.00, purchaseQty: 1, purchaseUnit: 'kg', useQty: 220, useUnit: 'g', yieldPercent: 100, density: 0.95 },
-      { id: 'i22', name: 'All-Purpose Flour', purchasePrice: 3.80, purchaseQty: 1, purchaseUnit: 'kg', useQty: 320, useUnit: 'g', yieldPercent: 100, density: 0.53 },
-      { id: 'i23', name: 'Valrhona 70% Chocolate Chips', purchasePrice: 18.50, purchaseQty: 1, purchaseUnit: 'kg', useQty: 250, useUnit: 'g', yieldPercent: 100, density: 0.75 },
-      { id: 'i24', name: 'Dark Brown Sugar', purchasePrice: 4.50, purchaseQty: 1, purchaseUnit: 'kg', useQty: 140, useUnit: 'g', yieldPercent: 100, density: 0.80 },
-      { id: 'i25', name: 'Maldon Flaky Sea Salt', purchasePrice: 9.00, purchaseQty: 250, purchaseUnit: 'g', useQty: 15, useUnit: 'g', yieldPercent: 100, density: 1.15 }
-    ],
-    packaging: [
-      { id: 'p21', name: 'Individual Greaseproof Cookie Pouch', cost: 0.12 }
-    ]
-  }
-];
+const { createApp, ref, reactive, computed, watch, onMounted, onUpdated, nextTick } = Vue;
 
 createApp({
   setup() {
-    const currency = ref('$');
-    const recipes = ref([]);
-    const activeRecipeId = ref('');
-    const toastMsg = ref('');
-    const showDensityModal = ref(false);
+    const STORAGE_KEY = 'bakecost_recipes_en_v1';
+
+    const UNITS = {
+      g:   { type: 'weight', toBase: 1 },
+      kg:  { type: 'weight', toBase: 1000 },
+      oz:  { type: 'weight', toBase: 28.3495 },
+      lb:  { type: 'weight', toBase: 453.592 },
+      ml:  { type: 'volume', toBase: 1 },
+      l:   { type: 'volume', toBase: 1000 },
+      cup: { type: 'volume', toBase: 236.588 },
+      tbsp:{ type: 'volume', toBase: 14.7868 },
+      tsp: { type: 'volume', toBase: 4.92892 },
+    };
+    const WEIGHT_UNITS = ['g', 'kg', 'oz', 'lb'];
+    const VOLUME_UNITS = ['ml', 'l', 'cup', 'tbsp', 'tsp'];
+
+    const RECIPE_ICONS = ['🥖','🍓','🍪','🍰','🧁','🥐','🍞','🥧','🍩','🎂'];
+
+    // ---- 40+ ingredient density library (g/ml), with default unit & yield ----
+    const DENSITY_LIBRARY = [
+      { name: 'Cake Flour', density: 0.51, defaultUnit: 'g' },
+      { name: 'All-Purpose Flour', density: 0.53, defaultUnit: 'g' },
+      { name: 'Bread Flour', density: 0.54, defaultUnit: 'g' },
+      { name: 'Whole Wheat Flour', density: 0.48, defaultUnit: 'g' },
+      { name: 'Almond Flour', density: 0.45, defaultUnit: 'g' },
+      { name: 'Granulated Sugar', density: 0.85, defaultUnit: 'g' },
+      { name: 'Powdered Sugar', density: 0.51, defaultUnit: 'g' },
+      { name: 'Brown Sugar', density: 0.93, defaultUnit: 'g' },
+      { name: 'Unsalted Butter', density: 0.96, defaultUnit: 'g' },
+      { name: 'Cultured Butter', density: 0.96, defaultUnit: 'g' },
+      { name: 'Vegetable Oil', density: 0.92, defaultUnit: 'ml' },
+      { name: 'Whole Milk', density: 1.03, defaultUnit: 'ml' },
+      { name: 'Heavy Cream (35%)', density: 1.00, defaultUnit: 'ml' },
+      { name: 'Whole Eggs', density: 1.03, defaultUnit: 'g' },
+      { name: 'Egg Whites', density: 1.03, defaultUnit: 'g' },
+      { name: 'Egg Yolks', density: 1.05, defaultUnit: 'g' },
+      { name: 'Water', density: 1.00, defaultUnit: 'ml' },
+      { name: 'Honey', density: 1.42, defaultUnit: 'g' },
+      { name: 'Maple Syrup', density: 1.33, defaultUnit: 'ml' },
+      { name: 'Mascarpone Cheese', density: 0.98, defaultUnit: 'g' },
+      { name: 'Cream Cheese', density: 1.01, defaultUnit: 'g' },
+      { name: 'Cocoa Powder', density: 0.41, defaultUnit: 'g' },
+      { name: 'Matcha Powder', density: 0.45, defaultUnit: 'g' },
+      { name: 'Instant Dry Yeast', density: 0.68, defaultUnit: 'g' },
+      { name: 'Baking Powder', density: 0.90, defaultUnit: 'g' },
+      { name: 'Baking Soda', density: 0.90, defaultUnit: 'g' },
+      { name: 'Fine Sea Salt', density: 1.20, defaultUnit: 'g' },
+      { name: 'Maldon Sea Salt Flakes', density: 0.55, defaultUnit: 'g' },
+      { name: 'Vanilla Extract', density: 0.88, defaultUnit: 'ml' },
+      { name: 'Fresh Strawberries', density: 0.62, defaultUnit: 'g', defaultYield: 85 },
+      { name: 'Fresh Blueberries', density: 0.70, defaultUnit: 'g', defaultYield: 95 },
+      { name: 'Chocolate Chips', density: 0.86, defaultUnit: 'g' },
+      { name: 'Dark Chocolate (70%)', density: 0.90, defaultUnit: 'g' },
+      { name: 'Valrhona 70% Dark Chocolate Chips', density: 0.90, defaultUnit: 'g' },
+      { name: 'Milk Chocolate', density: 0.90, defaultUnit: 'g' },
+      { name: 'White Chocolate', density: 0.92, defaultUnit: 'g' },
+      { name: 'Cream of Tartar', density: 0.96, defaultUnit: 'g' },
+      { name: 'Corn Starch', density: 0.56, defaultUnit: 'g' },
+      { name: 'Gelatin Powder', density: 0.68, defaultUnit: 'g' },
+      { name: 'Lemon Juice', density: 1.03, defaultUnit: 'ml' },
+      { name: 'Orange Zest', density: 0.30, defaultUnit: 'g' },
+      { name: 'Rolled Oats', density: 0.34, defaultUnit: 'g' },
+      { name: 'Desiccated Coconut', density: 0.35, defaultUnit: 'g' },
+      { name: 'Walnuts (chopped)', density: 0.45, defaultUnit: 'g' },
+      { name: 'Pecans (chopped)', density: 0.45, defaultUnit: 'g' },
+      { name: 'Hazelnuts (ground)', density: 0.50, defaultUnit: 'g' },
+      { name: 'Cinnamon Powder', density: 0.45, defaultUnit: 'g' },
+      { name: 'Full Cream Milk Powder', density: 0.45, defaultUnit: 'g' },
+    ];
+
+    function uid() { return Math.random().toString(36).slice(2, 10) + Date.now().toString(36); }
+
+    function toGrams(amount, unit, density) {
+      const u = UNITS[unit]; if (!u) return 0;
+      const d = density > 0 ? density : 1;
+      return u.type === 'weight' ? amount * u.toBase : amount * u.toBase * d;
+    }
+    function toMl(amount, unit, density) {
+      const u = UNITS[unit]; if (!u) return 0;
+      const d = density > 0 ? density : 1;
+      return u.type === 'volume' ? amount * u.toBase : (amount * u.toBase) / d;
+    }
+
+    function makeIngredient(o) {
+      return reactive({
+        id: uid(), presetKey: o.presetKey || '', name: o.name || '', density: o.density ?? 1,
+        purchasePrice: o.purchasePrice ?? 0, packageSize: o.packageSize ?? 1, packageUnit: o.packageUnit || 'g',
+        usageAmount: o.usageAmount ?? 0, usageUnit: o.usageUnit || 'g', yieldPct: o.yieldPct ?? 100,
+      });
+    }
+    function makePackaging(o) {
+      return reactive({ id: uid(), name: o.name || '', unitCost: o.unitCost ?? 0, qty: o.qty ?? 1 });
+    }
+
+    function makePreset1() {
+      return reactive({
+        id: uid(), icon: '🍓', name: 'French Strawberry Cheese Tart', servings: 8, bakingLossPct: 5,
+        targetFoodCostPct: 30, customPrice: 12.00, laborMinutes: 45, hourlyRate: 18, overheadAmount: 2.50,
+        ingredients: [
+          makeIngredient({ presetKey: 'Unsalted Butter', name: 'Unsalted Butter', density: 0.96, purchasePrice: 6.50, packageSize: 1, packageUnit: 'kg', usageAmount: 150, usageUnit: 'g' }),
+          makeIngredient({ presetKey: 'Cake Flour', name: 'Cake Flour', density: 0.51, purchasePrice: 4.20, packageSize: 1, packageUnit: 'kg', usageAmount: 200, usageUnit: 'g' }),
+          makeIngredient({ presetKey: 'Granulated Sugar', name: 'Granulated Sugar', density: 0.85, purchasePrice: 3.00, packageSize: 2, packageUnit: 'kg', usageAmount: 90, usageUnit: 'g' }),
+          makeIngredient({ presetKey: 'Mascarpone Cheese', name: 'Mascarpone Cheese', density: 0.98, purchasePrice: 5.50, packageSize: 250, packageUnit: 'g', usageAmount: 250, usageUnit: 'g' }),
+          makeIngredient({ presetKey: 'Fresh Strawberries', name: 'Fresh Strawberries', density: 0.62, purchasePrice: 4.00, packageSize: 500, packageUnit: 'g', usageAmount: 300, usageUnit: 'g', yieldPct: 85 }),
+          makeIngredient({ presetKey: 'Heavy Cream (35%)', name: 'Heavy Cream (35%)', density: 1.00, purchasePrice: 3.80, packageSize: 1, packageUnit: 'l', usageAmount: 200, usageUnit: 'ml' }),
+        ],
+        packaging: [
+          makePackaging({ name: '8-inch Gold Foil Cake Box', unitCost: 1.20, qty: 1 }),
+          makePackaging({ name: 'Ribbon & Sticker', unitCost: 0.35, qty: 1 }),
+        ],
+      });
+    }
+    function makePreset2() {
+      return reactive({
+        id: uid(), icon: '🍪', name: 'Sea Salt Dark Chocolate Cookies', servings: 18, bakingLossPct: 8,
+        targetFoodCostPct: 30, customPrice: 3.75, laborMinutes: 30, hourlyRate: 18, overheadAmount: 1.50,
+        ingredients: [
+          makeIngredient({ presetKey: 'Cultured Butter', name: 'Cultured Butter', density: 0.96, purchasePrice: 7.00, packageSize: 1, packageUnit: 'kg', usageAmount: 220, usageUnit: 'g' }),
+          makeIngredient({ presetKey: 'All-Purpose Flour', name: 'All-Purpose Flour', density: 0.53, purchasePrice: 3.50, packageSize: 1, packageUnit: 'kg', usageAmount: 300, usageUnit: 'g' }),
+          makeIngredient({ presetKey: 'Valrhona 70% Dark Chocolate Chips', name: 'Valrhona 70% Dark Chocolate Chips', density: 0.90, purchasePrice: 12.00, packageSize: 1, packageUnit: 'kg', usageAmount: 250, usageUnit: 'g' }),
+          makeIngredient({ presetKey: 'Brown Sugar', name: 'Brown Sugar', density: 0.93, purchasePrice: 3.20, packageSize: 1, packageUnit: 'kg', usageAmount: 180, usageUnit: 'g' }),
+          makeIngredient({ presetKey: 'Maldon Sea Salt Flakes', name: 'Maldon Sea Salt Flakes', density: 0.55, purchasePrice: 6.50, packageSize: 125, packageUnit: 'g', usageAmount: 6, usageUnit: 'g' }),
+        ],
+        packaging: [
+          makePackaging({ name: 'Individual Cookie Pouches', unitCost: 0.12, qty: 18 }),
+        ],
+      });
+    }
+
+    const recipes = reactive([]);
+    const activeId = ref(null);
     const showExportModal = ref(false);
     const showBackupModal = ref(false);
-    const densitySearch = ref('');
-    const isDownloading = ref(false);
+    const toasts = ref([]);
 
-    onMounted(() => {
-      const saved = localStorage.getItem('bakecost_recipes_en_v1');
-      if (saved) {
-        try {
-          recipes.value = JSON.parse(saved);
-        } catch (e) {
-          recipes.value = DEFAULT_RECIPES;
-        }
-      } else {
-        recipes.value = DEFAULT_RECIPES;
-      }
-      
-      const savedCurrency = localStorage.getItem('bakecost_currency');
-      if (savedCurrency) currency.value = savedCurrency;
-
-      if (recipes.value.length > 0) {
-        activeRecipeId.value = recipes.value[0].id;
-      }
-
-      nextTick(() => {
-        if (window.lucide) lucide.createIcons();
-      });
-    });
-
-    watch(recipes, (val) => {
-      localStorage.setItem('bakecost_recipes_en_v1', JSON.stringify(val));
-      nextTick(() => {
-        if (window.lucide) lucide.createIcons();
-      });
-    }, { deep: true });
-
-    watch(currency, (val) => {
-      localStorage.setItem('bakecost_currency', val);
-    });
-
-    const currentRecipe = computed(() => {
-      let r = recipes.value.find(item => item.id === activeRecipeId.value);
-      if (!r && recipes.value.length > 0) {
-        r = recipes.value[0];
-        activeRecipeId.value = r.id;
-      }
-      return r || DEFAULT_RECIPES[0];
-    });
-
-    const densityList = ref(DENSITY_DATA);
-    const filteredDensityList = computed(() => {
-      const q = densitySearch.value.trim().toLowerCase();
-      if (!q) return densityList.value;
-      return densityList.value.filter(d => d.name.toLowerCase().includes(q));
-    });
-
-    const currentDateStr = computed(() => {
-      const now = new Date();
-      return now.toISOString().split('T')[0];
-    });
-
-    function calcIngredientUnitCost(ing) {
-      if (!ing.purchasePrice || !ing.purchaseQty) return 0;
-      if (ing.purchaseUnit === 'pcs') {
-        return ing.purchasePrice / ing.purchaseQty;
-      }
-      const pkgGrams = unitToGrams(ing.purchaseQty, ing.purchaseUnit, ing.density || 1.0);
-      if (pkgGrams <= 0) return 0;
-      return ing.purchasePrice / pkgGrams;
+    function toast(msg) {
+      const id = uid();
+      toasts.value.push({ id, msg });
+      setTimeout(() => { toasts.value = toasts.value.filter(t => t.id !== id); }, 3000);
     }
 
-    function calcIngredientCost(ing) {
-      const pricePerGram = calcIngredientUnitCost(ing);
-      if (ing.useUnit === 'pcs') {
-        return pricePerGram * (ing.useQty || 0);
-      }
-      const useGrams = unitToGrams(ing.useQty, ing.useUnit, ing.density || 1.0);
-      const yieldRate = (ing.yieldPercent || 100) / 100;
-      if (yieldRate <= 0) return 0;
-      const actualRequiredGrams = useGrams / yieldRate;
-      return pricePerGram * actualRequiredGrams;
-    }
-
-    const summary = computed(() => {
-      const r = currentRecipe.value;
-      if (!r) return { totalIngCost: 0, unitTotalCost: 0, suggestedPrice: 0, actualFoodCostPercent: 0, unitNetProfit: 0, grossMarginPercent: 0, ingShare: 100, pkgShare: 0, laborShare: 0, overheadShare: 0, batchTotalCost: 0, unitIngCost: 0, unitPkgCost: 0, unitLaborCost: 0, unitOverheadCost: 0 };
-
-      const totalIngCost = (r.ingredients || []).reduce((sum, ing) => sum + calcIngredientCost(ing), 0);
-      const totalPkgCost = (r.packaging || []).reduce((sum, p) => sum + (p.cost || 0), 0) * (r.batchYield || 1);
-      const totalLaborCost = ((r.laborMinutes || 0) / 60) * (r.hourlyRate || 0);
-      const totalOverhead = (r.fixedOverhead || 0);
-
-      const batchTotalCost = totalIngCost + totalPkgCost + totalLaborCost + totalOverhead;
-      const yieldCount = Math.max(1, r.batchYield || 1);
-
-      const unitIngCost = totalIngCost / yieldCount;
-      const unitPkgCost = totalPkgCost / yieldCount;
-      const unitLaborCost = totalLaborCost / yieldCount;
-      const unitOverheadCost = totalOverhead / yieldCount;
-      const unitTotalCost = batchTotalCost / yieldCount;
-
-      const targetFoodCost = Math.max(10, r.targetFoodCostPercent || 28) / 100;
-      const suggestedPrice = unitIngCost / targetFoodCost;
-
-      const finalPrice = r.customPrice && r.customPrice > 0 ? r.customPrice : suggestedPrice;
-      const actualFoodCostPercent = finalPrice > 0 ? (unitIngCost / finalPrice) * 100 : 0;
-      const unitNetProfit = finalPrice - unitTotalCost;
-      const grossMarginPercent = finalPrice > 0 ? (unitNetProfit / finalPrice) * 100 : 0;
-
-      const ingShare = batchTotalCost > 0 ? (totalIngCost / batchTotalCost) * 100 : 100;
-      const pkgShare = batchTotalCost > 0 ? (totalPkgCost / batchTotalCost) * 100 : 0;
-      const laborShare = batchTotalCost > 0 ? (totalLaborCost / batchTotalCost) * 100 : 0;
-      const overheadShare = batchTotalCost > 0 ? (totalOverhead / batchTotalCost) * 100 : 0;
-
-      return {
-        totalIngCost,
-        batchTotalCost,
-        unitTotalCost,
-        unitIngCost,
-        unitPkgCost,
-        unitLaborCost,
-        unitOverheadCost,
-        suggestedPrice,
-        finalPrice,
-        actualFoodCostPercent,
-        unitNetProfit,
-        grossMarginPercent,
-        ingShare,
-        pkgShare,
-        laborShare,
-        overheadShare
-      };
-    });
-
-    const foodCostStatusClass = computed(() => {
-      const fc = summary.value.actualFoodCostPercent;
-      if (fc <= 32 && fc >= 22) {
-        return 'bg-emerald-50 text-emerald-800 border-emerald-200/80';
-      } else if (fc < 22) {
-        return 'bg-amber-50 text-amber-900 border-amber-200/80';
-      } else {
-        return 'bg-red-50 text-red-800 border-red-200/80';
-      }
-    });
-
-    function addIngredient() {
-      currentRecipe.value.ingredients.push({
-        id: 'i_' + Date.now() + Math.random().toString(36).substr(2, 4),
-        name: '',
-        purchasePrice: 10,
-        purchaseQty: 1,
-        purchaseUnit: 'kg',
-        useQty: 100,
-        useUnit: 'g',
-        yieldPercent: 100,
-        density: 1.0
-      });
-      showToast('Added ingredient line');
-    }
-
-    function removeIngredient(idx) {
-      currentRecipe.value.ingredients.splice(idx, 1);
-    }
-
-    function applyPresetDensity(ing, event) {
-      const name = event.target.value;
-      if (!name) return;
-      const found = densityList.value.find(d => d.name === name);
-      if (found) {
-        ing.name = found.name;
-        ing.density = found.density;
-        showToast('Applied density: ' + found.density + ' g/ml');
-      }
-    }
-
-    function addIngredientFromDensity(d) {
-      currentRecipe.value.ingredients.push({
-        id: 'i_' + Date.now(),
-        name: d.name,
-        purchasePrice: 10,
-        purchaseQty: 1,
-        purchaseUnit: 'kg',
-        useQty: 100,
-        useUnit: 'g',
-        yieldPercent: 100,
-        density: d.density
-      });
-      showDensityModal.value = false;
-      showToast('Added from density library: ' + d.name);
-    }
-
-    function addPackaging() {
-      currentRecipe.value.packaging.push({
-        id: 'p_' + Date.now(),
-        name: 'Packaging Box / Pouch',
-        cost: 0.50
-      });
-    }
-
-    function removePackaging(idx) {
-      currentRecipe.value.packaging.splice(idx, 1);
-    }
-
-    function createNewRecipe() {
-      const newId = 'r_' + Date.now();
-      const newR = {
-        id: newId,
-        name: 'Untitled Bakery Recipe',
-        category: 'Cakes & Pastries',
-        batchYield: 1,
-        bakingLoss: 5,
-        targetFoodCostPercent: 28,
-        customPrice: 0,
-        laborMinutes: 30,
-        hourlyRate: 20,
-        fixedOverhead: 1.0,
-        note: '',
-        ingredients: [
-          { id: 'i1', name: 'Ingredient 1', purchasePrice: 5.00, purchaseQty: 1, purchaseUnit: 'kg', useQty: 200, useUnit: 'g', yieldPercent: 100, density: 1.0 }
-        ],
-        packaging: []
-      };
-      recipes.value.push(newR);
-      activeRecipeId.value = newId;
-      showToast('Created new recipe');
-    }
-
-    function duplicateCurrentRecipe() {
-      const cur = currentRecipe.value;
-      const clone = JSON.parse(JSON.stringify(cur));
-      clone.id = 'r_' + Date.now();
-      clone.name = cur.name + ' (Copy)';
-      recipes.value.push(clone);
-      activeRecipeId.value = clone.id;
-      showToast('Duplicated current recipe');
-    }
-
-    function deleteRecipe(id) {
-      if (recipes.value.length <= 1) {
-        showToast('Please keep at least one recipe');
-        return;
-      }
-      recipes.value = recipes.value.filter(r => r.id !== id);
-      activeRecipeId.value = recipes.value[0].id;
-      showToast('Deleted recipe');
-    }
-
-    function showToast(msg) {
-      toastMsg.value = msg;
-      setTimeout(() => {
-        toastMsg.value = '';
-      }, 3000);
-    }
-
-    function copyPriceSummary() {
-      const r = currentRecipe.value;
-      const s = summary.value;
-      const text = [
-        '【' + r.name + '】Cost & Pricing Breakdown',
-        '--------------------------------',
-        '• Batch Yield: ' + r.batchYield + ' servings',
-        '• Raw Ingredient Cost / Serving: ' + currency.value + s.unitIngCost.toFixed(2),
-        '• Total Unit Cost (w/ packaging & labor): ' + currency.value + s.unitTotalCost.toFixed(2),
-        '• Food Cost %: ' + s.actualFoodCostPercent.toFixed(1) + '%',
-        '• Suggested Retail Price: ' + currency.value + s.suggestedPrice.toFixed(2) + ' / serving',
-        '• Net Profit per Unit: +' + currency.value + s.unitNetProfit.toFixed(2) + ' (Margin ' + s.grossMarginPercent.toFixed(1) + '%)',
-        '--------------------------------',
-        'Generated by BakeCost Studio'
-      ].join('
-');
-
-      if (navigator.clipboard) {
-        navigator.clipboard.writeText(text);
-        showToast('Summary copied to clipboard!');
-      }
-    }
-
-    function openExportModal() {
-      showExportModal.value = true;
-      nextTick(() => {
-        if (window.lucide) lucide.createIcons();
-      });
-    }
-
-    function openBackupModal() {
-      showBackupModal.value = true;
-      nextTick(() => {
-        if (window.lucide) lucide.createIcons();
-      });
-    }
-
-    async function downloadImageCard() {
-      isDownloading.value = true;
+    function persist() {
       try {
-        const el = document.getElementById('printTarget');
-        const canvas = await html2canvas(el, { scale: 2, backgroundColor: '#FAF8F5' });
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({ recipes, activeId: activeId.value }));
+      } catch (e) { /* storage unavailable */ }
+    }
+
+    function resetToDefaults(confirmFirst) {
+      if (confirmFirst && !confirm('Reset to the two default starter recipes? This will erase all your saved recipes and cannot be undone.')) return;
+      const d1 = makePreset1(), d2 = makePreset2();
+      recipes.splice(0, recipes.length, d1, d2);
+      activeId.value = d1.id;
+      persist();
+      if (confirmFirst) { toast('Recipes reset to defaults.'); showBackupModal.value = false; }
+    }
+
+    function loadFromStorage() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const data = JSON.parse(raw);
+          if (data && Array.isArray(data.recipes) && data.recipes.length) {
+            recipes.splice(0, recipes.length, ...data.recipes);
+            activeId.value = (data.activeId && recipes.find(r => r.id === data.activeId)) ? data.activeId : recipes[0].id;
+            return;
+          }
+        }
+      } catch (e) { /* fall through to defaults */ }
+      resetToDefaults(false);
+    }
+
+    watch(recipes, persist, { deep: true });
+    watch(activeId, persist);
+
+    const activeRecipe = computed(() => recipes.find(r => r.id === activeId.value) || recipes[0]);
+
+    // ---- Ingredient / packaging management ----
+    function addIngredient() {
+      activeRecipe.value.ingredients.push(makeIngredient({}));
+    }
+    function removeIngredient(idx) { activeRecipe.value.ingredients.splice(idx, 1); }
+    function applyPreset(ing) {
+      if (!ing.presetKey) return;
+      const item = DENSITY_LIBRARY.find(d => d.name === ing.presetKey);
+      if (!item) return;
+      ing.name = item.name;
+      ing.density = item.density;
+      ing.packageUnit = item.defaultUnit;
+      ing.usageUnit = item.defaultUnit;
+      ing.yieldPct = item.defaultYield || 100;
+    }
+    function addPackaging() { activeRecipe.value.packaging.push(makePackaging({})); }
+    function removePackaging(idx) { activeRecipe.value.packaging.splice(idx, 1); }
+
+    // ---- Recipe management ----
+    function addNewRecipe() {
+      const r = reactive({
+        id: uid(), icon: '🍰', name: 'New Recipe', servings: 1, bakingLossPct: 0,
+        targetFoodCostPct: 30, customPrice: 0, laborMinutes: 0, hourlyRate: 15, overheadAmount: 0,
+        ingredients: [], packaging: [],
+      });
+      recipes.push(r);
+      activeId.value = r.id;
+    }
+    function duplicateRecipe() {
+      const clone = JSON.parse(JSON.stringify(activeRecipe.value));
+      clone.id = uid();
+      clone.name = (clone.name || 'Untitled Recipe') + ' (Copy)';
+      clone.ingredients.forEach(i => i.id = uid());
+      clone.packaging.forEach(p => p.id = uid());
+      recipes.push(reactive(clone));
+      activeId.value = clone.id;
+      toast('Recipe duplicated.');
+    }
+    function deleteRecipe(id) {
+      if (recipes.length <= 1) { toast('You must keep at least one recipe.'); return; }
+      if (!confirm('Delete this recipe? This cannot be undone.')) return;
+      const idx = recipes.findIndex(r => r.id === id);
+      recipes.splice(idx, 1);
+      if (activeId.value === id) activeId.value = recipes[0].id;
+      toast('Recipe deleted.');
+    }
+
+    // ---- Cost calculations ----
+    function ingredientUsageGrams(ing) { return toGrams(ing.usageAmount || 0, ing.usageUnit, ing.density || 1); }
+    function ingredientUsageMl(ing) { return toMl(ing.usageAmount || 0, ing.usageUnit, ing.density || 1); }
+    function ingredientPackageGrams(ing) { return toGrams(ing.packageSize || 0, ing.packageUnit, ing.density || 1); }
+    function unitCostPerGram(ing) {
+      const g = ingredientPackageGrams(ing);
+      return g > 0 ? (ing.purchasePrice || 0) / g : 0;
+    }
+    function ingredientLineCost(ing) {
+      const yieldFrac = Math.max(0.01, (ing.yieldPct || 100) / 100);
+      const rawGramsNeeded = ingredientUsageGrams(ing) / yieldFrac;
+      return rawGramsNeeded * unitCostPerGram(ing);
+    }
+
+    const ingredientsTotal = computed(() => activeRecipe.value.ingredients.reduce((s, i) => s + ingredientLineCost(i), 0));
+    const packagingTotal = computed(() => activeRecipe.value.packaging.reduce((s, p) => s + (p.unitCost || 0) * (p.qty || 0), 0));
+    const laborCost = computed(() => ((activeRecipe.value.laborMinutes || 0) / 60) * (activeRecipe.value.hourlyRate || 0));
+    const overheadCost = computed(() => activeRecipe.value.overheadAmount || 0);
+    const totalBatchCost = computed(() => ingredientsTotal.value + packagingTotal.value + laborCost.value + overheadCost.value);
+    const costPerServing = computed(() => totalBatchCost.value / Math.max(1, activeRecipe.value.servings || 1));
+
+    const totalUsageWeightG = computed(() => activeRecipe.value.ingredients.reduce((s, i) => s + ingredientUsageGrams(i), 0));
+    const finalBakedWeightG = computed(() => Math.max(0, totalUsageWeightG.value * (1 - (activeRecipe.value.bakingLossPct || 0) / 100)));
+    const costPer100g = computed(() => finalBakedWeightG.value > 0 ? (totalBatchCost.value / finalBakedWeightG.value) * 100 : 0);
+    const weightPerServingG = computed(() => finalBakedWeightG.value / Math.max(1, activeRecipe.value.servings || 1));
+
+    const suggestedPrice = computed(() => costPerServing.value / Math.max(0.01, (activeRecipe.value.targetFoodCostPct || 30) / 100));
+    const sliderFillPct = computed(() => {
+      const v = activeRecipe.value.targetFoodCostPct || 30;
+      return Math.min(100, Math.max(0, ((v - 5) / (60 - 5)) * 100));
+    });
+
+    const foodCostPctCustom = computed(() => (activeRecipe.value.customPrice > 0) ? (costPerServing.value / activeRecipe.value.customPrice) * 100 : 0);
+    const netProfitCustom = computed(() => (activeRecipe.value.customPrice || 0) - costPerServing.value);
+    const grossMarginCustom = computed(() => (activeRecipe.value.customPrice > 0) ? (netProfitCustom.value / activeRecipe.value.customPrice) * 100 : 0);
+
+    const breakdown = computed(() => {
+      const total = Math.max(0.0001, totalBatchCost.value);
+      return [
+        { label: 'Ingredients', value: ingredientsTotal.value, pct: ingredientsTotal.value / total * 100, color: '#D97706' },
+        { label: 'Packaging', value: packagingTotal.value, pct: packagingTotal.value / total * 100, color: '#B45309' },
+        { label: 'Labor', value: laborCost.value, pct: laborCost.value / total * 100, color: '#92400E' },
+        { label: 'Overhead', value: overheadCost.value, pct: overheadCost.value / total * 100, color: '#78350F' },
+      ];
+    });
+
+    // ---- Formatting ----
+    function fmtMoney(n) { n = Number(n); if (!isFinite(n)) n = 0; return (n < 0 ? '-$' : '$') + Math.abs(n).toFixed(2); }
+    function fmtNum(n, d) { n = Number(n); if (!isFinite(n)) n = 0; return n.toFixed(d == null ? 1 : d); }
+    const todayStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
+    // ---- Export / Backup ----
+    function openExportModal() { showExportModal.value = true; }
+    function downloadPng() {
+      const el = document.getElementById('exportCard');
+      if (!el || !window.html2canvas) return;
+      html2canvas(el, { scale: 2, backgroundColor: '#FAF8F5' }).then(canvas => {
         const link = document.createElement('a');
-        link.download = (currentRecipe.value.name || 'Recipe_Cost').replace(/\s+/g, '_') + '_BakeCost.png';
+        const safeName = (activeRecipe.value.name || 'recipe').trim().replace(/\s+/g, '-').toLowerCase() || 'recipe';
+        link.download = safeName + '-cost-card.png';
         link.href = canvas.toDataURL('image/png');
         link.click();
-        showToast('High-res image downloaded!');
-      } catch (e) {
-        showToast('Image export failed. Try printing directly.');
-      } finally {
-        isDownloading.value = false;
-      }
+        toast('Cost card downloaded as PNG.');
+      });
     }
+    function printCard() { window.print(); }
 
-    function printCard() {
-      window.print();
-    }
-
-    function exportJsonBackup() {
-      const data = {
-        version: '1.0',
-        exportedAt: new Date().toISOString(),
-        currency: currency.value,
-        recipes: recipes.value
-      };
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    function exportJson() {
+      const data = JSON.stringify({ recipes, activeId: activeId.value }, null, 2);
+      const blob = new Blob([data], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url;
-      a.download = 'BakeCost_Backup_' + new Date().toISOString().split('T')[0] + '.json';
+      a.href = url; a.download = 'bakecost-backup-' + new Date().toISOString().slice(0, 10) + '.json';
       a.click();
       URL.revokeObjectURL(url);
-      showToast('Backup JSON downloaded');
+      toast('Backup exported.');
     }
-
-    function importJsonBackup(event) {
-      const file = event.target.files[0];
+    function importJson(e) {
+      const file = e.target.files[0];
       if (!file) return;
       const reader = new FileReader();
-      reader.onload = (e) => {
+      reader.onload = (ev) => {
         try {
-          const parsed = JSON.parse(e.target.result);
-          if (parsed && Array.isArray(parsed.recipes)) {
-            recipes.value = parsed.recipes;
-            if (parsed.currency) currency.value = parsed.currency;
-            if (recipes.value.length > 0) activeRecipeId.value = recipes.value[0].id;
-            showBackupModal.value = false;
-            showToast('Successfully imported ' + parsed.recipes.length + ' recipes!');
-          } else {
-            showToast('Invalid JSON file structure');
-          }
+          const data = JSON.parse(ev.target.result);
+          if (!data || !Array.isArray(data.recipes) || !data.recipes.length) throw new Error('Invalid file');
+          if (!confirm('Import will replace all current recipes. Continue?')) return;
+          recipes.splice(0, recipes.length, ...data.recipes.map(r => reactive(r)));
+          activeId.value = (data.activeId && recipes.find(r => r.id === data.activeId)) ? data.activeId : recipes[0].id;
+          toast('Recipes imported successfully.');
+          showBackupModal.value = false;
         } catch (err) {
-          showToast('Failed to read backup file');
+          toast('Import failed: invalid JSON file.');
         }
       };
       reader.readAsText(file);
+      e.target.value = '';
     }
 
-    function resetToDefaults() {
-      if (confirm('Reset all recipes to default factory presets?')) {
-        recipes.value = DEFAULT_RECIPES;
-        activeRecipeId.value = DEFAULT_RECIPES[0].id;
-        showBackupModal.value = false;
-        showToast('Reset to defaults');
-      }
-    }
+    onMounted(() => { loadFromStorage(); nextTick(() => window.lucide && lucide.createIcons()); });
+    onUpdated(() => { window.lucide && lucide.createIcons(); });
 
     return {
-      currency,
-      recipes,
-      activeRecipeId,
-      currentRecipe,
-      densityList,
-      filteredDensityList,
-      densitySearch,
-      summary,
-      foodCostStatusClass,
-      currentDateStr,
-      toastMsg,
-      showDensityModal,
-      showExportModal,
-      showBackupModal,
-      isDownloading,
-      calcIngredientUnitCost,
-      calcIngredientCost,
-      addIngredient,
-      removeIngredient,
-      applyPresetDensity,
-      addIngredientFromDensity,
-      addPackaging,
-      removePackaging,
-      createNewRecipe,
-      duplicateCurrentRecipe,
-      deleteRecipe,
-      copyPriceSummary,
-      openExportModal,
-      openBackupModal,
-      downloadImageCard,
-      printCard,
-      exportJsonBackup,
-      importJsonBackup,
-      resetToDefaults
+      DENSITY_LIBRARY, WEIGHT_UNITS, VOLUME_UNITS, RECIPE_ICONS,
+      recipes, activeId, activeRecipe,
+      showExportModal, showBackupModal, toasts, todayStr,
+      addIngredient, removeIngredient, applyPreset, addPackaging, removePackaging,
+      addNewRecipe, duplicateRecipe, deleteRecipe, resetToDefaults,
+      ingredientUsageGrams, ingredientUsageMl, unitCostPerGram, ingredientLineCost,
+      ingredientsTotal, packagingTotal, laborCost, overheadCost, totalBatchCost, costPerServing,
+      finalBakedWeightG, costPer100g, weightPerServingG,
+      suggestedPrice, sliderFillPct, foodCostPctCustom, netProfitCustom, grossMarginCustom, breakdown,
+      fmtMoney, fmtNum,
+      openExportModal, downloadPng, printCard, exportJson, importJson,
     };
   }
 }).mount('#app');
