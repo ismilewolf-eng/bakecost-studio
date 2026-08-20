@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <!-- Background Canvas: Warm Baked Amber Gradient -->
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FB923C" />
+      <stop offset="45%" stop-color="#EA580C" />
+      <stop offset="100%" stop-color="#9A3412" />
+    </linearGradient>
+
+    <!-- Top Soft Specular Highlight -->
+    <linearGradient id="specular" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.35" />
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0" />
+    </linearGradient>
+
+    <!-- Golden Crust Texture Gradient -->
+    <linearGradient id="crust" x1="20%" y1="0%" x2="80%" y2="100%">
+      <stop offset="0%" stop-color="#FFFBEB" />
+      <stop offset="25%" stop-color="#FEF08A" />
+      <stop offset="60%" stop-color="#F59E0B" />
+      <stop offset="100%" stop-color="#78350F" />
+    </linearGradient>
+
+    <filter id="drop-shadow" x="-15%" y="-15%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="14" stdDeviation="16" flood-color="#431407" flood-opacity="0.45" />
+    </filter>
+  </defs>
+
+  <!-- iOS-style Squircle Base Container -->
+  <rect x="32" y="32" width="448" height="448" rx="112" fill="url(#bg)" />
+  <rect x="32" y="32" width="448" height="224" rx="112" fill="url(#specular)" />
+  <rect x="33" y="33" width="446" height="446" rx="111" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="3" />
+
+  <!-- Harmonious Artisanal Loaf & Baker Score Cuts -->
+  <g filter="url(#drop-shadow)" transform="translate(256, 256) rotate(-18) translate(-256, -256)">
+    <!-- Base Golden Loaf Oval with Natural Organic Curvature -->
+    <path d="M 140,256 C 140,175 190,140 256,140 C 322,140 372,175 372,256 C 372,337 322,372 256,372 C 190,372 140,337 140,256 Z" fill="url(#crust)" />
+
+    <!-- Top Flour Highlight Glow -->
+    <path d="M 152,256 C 152,185 198,154 256,154 C 314,154 360,185 360,256 C 340,285 295,300 256,300 C 217,300 172,285 152,256 Z" fill="#FFFFFF" opacity="0.3" />
+
+    <!-- Artisanal Slash 1 -->
+    <path d="M 195,190 C 205,230 205,280 195,320" fill="none" stroke="#FFFFFF" stroke-width="12" stroke-linecap="round" />
+    <path d="M 198,193 C 207,232 207,280 198,318" fill="none" stroke="#78350F" stroke-width="4.5" stroke-linecap="round" opacity="0.65" />
+
+    <!-- Artisanal Slash 2 (Center) -->
+    <path d="M 256,170 C 266,225 266,285 256,342" fill="none" stroke="#FFFFFF" stroke-width="14" stroke-linecap="round" />
+    <path d="M 259,173 C 268,227 268,285 259,340" fill="none" stroke="#78350F" stroke-width="5" stroke-linecap="round" opacity="0.7" />
+
+    <!-- Artisanal Slash 3 -->
+    <path d="M 317,190 C 327,230 327,280 317,320" fill="none" stroke="#FFFFFF" stroke-width="12" stroke-linecap="round" />
+    <path d="M 319,193 C 328,232 328,280 319,318" fill="none" stroke="#78350F" stroke-width="4.5" stroke-linecap="round" opacity="0.65" />
+  </g>
+</svg>
