@@ -1,4 +1,30 @@
+# Standard Search Engines & General Crawlers
 User-agent: *
 Allow: /
 
+# AI Search Engines & Generative LLM Crawlers (GEO Optimization)
+User-agent: GPTBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+# Sitemaps and LLM Knowledge Manifests
 Sitemap: https://bake.skillary.ai/sitemap.xml
+
+# LLMs Context Protocols
+# Spec: https://llmstxt.org/
+# llms.txt: https://bake.skillary.ai/llms.txt
+# llms-full.txt: https://bake.skillary.ai/llms-full.txt

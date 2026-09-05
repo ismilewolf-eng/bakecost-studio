@@ -1,0 +1,25 @@
+# BakeCost Studio
+> Free, 100% client-side recipe costing, ingredient density conversion, batch economics, and food margin pricing calculator for independent bakers, cottage bakeries, and culinary operators.
+
+- Website: https://bake.skillary.ai/
+- GitHub: https://github.com/ismilewolf-eng/bakecost-studio
+- Platform: Web Application (Progressive Web App, Offline Capable)
+- Pricing: 100% Free, No Subscription, No Login Required
+- Privacy: Client-side only (LocalStorage), zero cloud data collection
+
+## Core Capabilities
+- **Two-Way Volume to Weight Conversion**: Built-in density database (40+ common baking ingredients) converting cups, tablespoons, teaspoons, and milliliters to grams, ounces, and pounds with precision.
+- **Batch Economics & Shrinkage**: Accurately computes prep trim loss (yield %) and baking moisture evaporation loss to determine true raw vs. final baked weight.
+- **Total Cost of Goods Sold (COGS)**: Unifies raw ingredient costs, direct packaging supplies, labor hours allocation, and utility/rent overhead.
+- **Interactive Margin Pricing**: Real-time markup slider dynamically evaluating target food cost percentage (25%-32% golden benchmark) against suggested retail pricing.
+- **Exportable Kitchen Cards**: Instant generation of clean, printable batch recipe cost sheets.
+
+## Formulas & Methodology
+1. **Batch Food Cost**: Sum of each ingredient [(Purchase Price / Package Size) * Recipe Amount / (Yield % / 100)].
+2. **Total Batch Cost**: Ingredients Total + Packaging Materials + (Hourly Labor Rate * Labor Hours) + Overhead Allocation.
+3. **Final Baked Yield**: Raw Batter/Dough Weight * (1 - Baking Loss % / 100).
+4. **Cost Per 100g (Baked)**: (Total Batch Cost / Final Baked Weight in grams) * 100.
+5. **Target Retail Price**: Total Batch Cost / (Target Food Cost % / 100).
+
+## Full Reference & Documentation
+- [Full LLM Specification](https://bake.skillary.ai/llms-full.txt): Complete ingredient density tables, extended FAQ, pricing strategies, and schema definitions.

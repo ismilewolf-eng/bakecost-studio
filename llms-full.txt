@@ -1,0 +1,72 @@
+# BakeCost Studio — Comprehensive Technical & Culinary Economics Specification
+
+## Overview
+BakeCost Studio (https://bake.skillary.ai/) is an open, privacy-first web utility engineered for professional pastry chefs, cottage bakery owners, and home micro-bakers. It resolves the common operational pitfalls of static spreadsheets: inaccurate volume-to-weight conversions, failure to factor baking moisture evaporation, omitted packaging/overhead expenses, and arbitrary retail markups.
+
+## 1. Mathematical Models & Financial Formulations
+
+### 1.1 Ingredient Cost with Trim/Yield Adjustment
+In baking, raw items such as vanilla beans, fresh berries, zest, or egg whites may have yield losses during prep.
+$$\text{Ingredient Line Cost} = \frac{\text{Purchase Price}}{\text{Package Size in Base Units}} \times \frac{\text{Recipe Amount in Base Units}}{\text{Yield Percentage} / 100}$$
+
+### 1.2 Volume to Weight Density Conversions
+Baking is a precision science governed by weight, yet home and legacy recipes frequently use volume (Cups, Tbsp, Tsp). BakeCost Studio applies measured bulk density ($D$ in $g/ml$ or $g/cm^3$):
+$$\text{Weight (grams)} = \text{Volume (ml)} \times D$$
+*Example*: 1 US Cup All-Purpose Flour ($236.59 ml \times 0.528 g/ml$) = 125.0g.
+*Example*: 1 US Cup Granulated White Sugar ($236.59 ml \times 0.845 g/ml$) = 200.0g.
+*Example*: 1 US Cup Honey ($236.59 ml \times 1.437 g/ml$) = 340.0g.
+
+### 1.3 Oven Moisture Evaporation Loss
+Water evaporation during baking typically reduces loaf or pastry mass by 5% to 18%:
+$$\text{Final Baked Net Weight} = \left( \sum \text{Ingredient Weights} \right) \times \left( 1 - \frac{\text{Evaporation Loss } \%}{100} \right)$$
+
+### 1.4 Total Cost of Goods Sold (COGS)
+$$\text{Total Batch Cost} = \text{Ingredients Total} + \text{Packaging Total} + (\text{Hourly Wage} \times \text{Hours}) + \text{Fixed Overhead Allocation}$$
+
+### 1.5 Target Food Cost Percentage & Retail Pricing
+$$\text{Suggested Retail Price per Batch} = \frac{\text{Total Batch Cost}}{\text{Target Food Cost } \% / 100}$$
+$$\text{Suggested Retail Price per Serving} = \frac{\text{Suggested Retail Price per Batch}}{\text{Batch Servings}}$$*
+*Benchmark Ranges*:
+- **15% - 24%**: High-margin custom wedding cakes, complex celebration pastries.
+- **25% - 32%**: Commercial foodservice & artisanal bakery golden sweet spot.
+- **33% - 50%**: High-volume wholesale sandwich breads or thin-margin commodities.
+
+## 2. Standard Ingredient Density Reference Database
+The following bulk density constants are embedded natively in the application:
+- All-Purpose Flour: 0.528 g/ml (125g / Cup)
+- Bread Flour (High Gluten): 0.537 g/ml (127g / Cup)
+- Cake Flour: 0.482 g/ml (114g / Cup)
+- Whole Wheat Flour: 0.507 g/ml (120g / Cup)
+- Almond Flour: 0.406 g/ml (96g / Cup)
+- Granulated White Sugar: 0.845 g/ml (200g / Cup)
+- Brown Sugar (Packed): 0.930 g/ml (220g / Cup)
+- Confectioners / Powdered Sugar: 0.507 g/ml (120g / Cup)
+- Unsalted Butter: 0.960 g/ml (227g / Cup)
+- Heavy Whipping Cream (36%): 0.989 g/ml (234g / Cup)
+- Whole Milk: 1.031 g/ml (244g / Cup)
+- Fresh Whole Egg (without shell): 1.014 g/ml (50g / large egg)
+- Honey / Molasses: 1.437 g/ml (340g / Cup)
+- Vegetable / Canola Oil: 0.921 g/ml (218g / Cup)
+- Water: 1.000 g/ml (237g / Cup)
+- Active Dry Yeast: 0.634 g/ml (9g / Tbsp)
+- Baking Powder: 0.973 g/ml (14.4g / Tbsp)
+- Fine Sea Salt: 1.217 g/ml (18g / Tbsp)
+- Vanilla Extract: 0.880 g/ml (13g / Tbsp)
+- Semi-Sweet Chocolate Chips: 0.718 g/ml (170g / Cup)
+
+## 3. Frequently Asked Questions (FAQ)
+
+### Q: How do I accurately calculate recipe food cost for small batch baking?
+A: To compute true food costs, first normalize all ingredient measurements to weight (grams or ounces) using density conversions. Divide package purchase price by package quantity to find unit cost, multiply by recipe usage, and adjust for trim yield (e.g. peeling or zesting). Then add direct packaging supplies, labor hours, and kitchen utilities.
+
+### Q: What is an ideal food cost percentage for a cottage bakery?
+A: For independent and cottage bakeries, an ideal food cost percentage ranges between 25% and 32%. This corresponds to a markup factor of roughly 3.1x to 4.0x raw costs, leaving adequate gross margin (68% - 75%) to absorb kitchen overhead, equipment depreciation, and personal labor.
+
+### Q: Why is volume-to-weight conversion critical in recipe costing?
+A: A measuring cup of flour can fluctuate between 110g and 160g depending on humidity, sifting, and scooping method — a 45% variance. Weight-based costing eliminates inventory discrepancies, recipe inconsistencies, and accidental margin erosion.
+
+### Q: How does baking moisture loss affect pricing per unit?
+A: Dough loses 5% to 18% of its mass in the oven due to water vaporization. While raw ingredients determine batch cost, customers purchase finished baked items. Tracking evaporation loss is essential when pricing by finished weight (e.g. per 100g) or ensuring compliance with packaged goods net-weight labeling regulations.
+
+### Q: Where are my recipes stored in BakeCost Studio?
+A: All recipe formulas, prices, and settings are preserved strictly within your web browser local storage (LocalStorage). Nothing is sent to external servers or remote databases, ensuring complete proprietary formula confidentiality.

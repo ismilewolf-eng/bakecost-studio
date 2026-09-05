@@ -37,6 +37,9 @@
 
 <!-- Canonical & OpenGraph Meta Tags -->
 <link rel="canonical" href="https://bake.skillary.ai/">
+  <link rel="alternate" type="text/plain" href="https://bake.skillary.ai/llms.txt" title="LLMs Context">
+  <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+  <meta name="keywords" content="bakery recipe costing calculator, food cost margin calculator, cottage bakery pricing, baking density converter, recipe cost sheet, baking moisture loss">
 <meta property="og:title" content="BakeCost Studio — Recipe Costing & Bakery Pricing Calculator">
 <meta property="og:description" content="Free recipe costing, ingredient unit conversion, labor overhead allocation, and food cost margin calculator for independent bakers, cottage bakeries, and café operators.">
 <meta property="og:url" content="https://bake.skillary.ai/">
@@ -52,45 +55,125 @@
   "@context": "https://schema.org",
   "@graph": [
     {
-      "@type": "SoftwareApplication",
+      "@type": "WebApplication",
+      "@id": "https://bake.skillary.ai/#app",
       "name": "BakeCost Studio",
-      "operatingSystem": "All",
+      "url": "https://bake.skillary.ai/",
+      "operatingSystem": "All modern browsers (Windows, macOS, iOS, Android, Linux)",
       "applicationCategory": "BusinessApplication",
+      "applicationSubCategory": "Food & Beverage Costing Software",
+      "browserRequirements": "Requires JavaScript. Requires HTML5 LocalStorage.",
+      "inLanguage": "en",
       "offers": {
         "@type": "Offer",
         "price": "0",
         "priceCurrency": "USD"
       },
-      "description": "Professional client-side recipe costing and food margin pricing tool for bakery and culinary businesses."
+      "description": "Free, 100% client-side recipe costing, ingredient volume-to-weight density conversion, oven evaporation loss, and food margin pricing calculator for independent cottage bakeries and culinary businesses.",
+      "featureList": [
+        "100% Client-Side Privacy: No user data or proprietary formulas sent to remote servers",
+        "Built-in 40+ ingredient density conversions between volume (cups/tbsp/tsp) and weight (grams/oz)",
+        "Prep trim loss (yield percentage) adjustments for raw produce and zest",
+        "Oven baking moisture evaporation loss calculation for accurate net baked weight",
+        "True batch COGS calculation factoring packaging supplies, labor rates, and kitchen utilities",
+        "Dynamic target food cost margin pricing slider with markup multiplier feedback",
+        "One-click printable batch recipe production cost cards"
+      ]
+    },
+    {
+      "@type": "HowTo",
+      "@id": "https://bake.skillary.ai/#howto-costing",
+      "name": "How to Accurately Cost a Bakery Recipe and Price for Profit",
+      "description": "A step-by-step culinary accounting workflow to calculate total batch cost, account for baking shrinkage, and price baked goods to ensure target profit margins.",
+      "step": [
+        {
+          "@type": "HowToStep",
+          "name": "Normalize Ingredient Quantities to Weight",
+          "text": "Convert volume measurements (cups, tablespoons, teaspoons) into metric grams using verified ingredient bulk densities to eliminate volumetric packing variance."
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Factor Prep Trim and Yield Percentage",
+          "text": "Account for prep waste (e.g. peeling, hulling berries, zesting citrus) by dividing purchase unit cost by the usable yield percentage (Edible Portion / As Purchased)."
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Measure Oven Moisture Evaporation Loss",
+          "text": "Determine raw batter or dough weight versus finished baked weight to compute water loss percentage (typically 5% to 18%) for accurate per-100g and per-serving costing."
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Aggregate Packaging Supplies, Direct Labor, and Overhead",
+          "text": "Add packaging items (cake boxes, parchment liners, ribbon, labels) plus direct labor hours multiplied by your target hourly rate, and add a kitchen utility/rent overhead surcharge."
+        },
+        {
+          "@type": "HowToStep",
+          "name": "Apply Target Food Cost Margin Markup",
+          "text": "Divide Total Batch Cost by your target food cost percentage (e.g., 28% sweet spot = divide by 0.28, or 3.57x markup) to establish the minimum viable retail price per serving and per batch."
+        }
+      ]
     },
     {
       "@type": "FAQPage",
+      "@id": "https://bake.skillary.ai/#faq",
       "mainEntity": [
         {
           "@type": "Question",
-          "name": "How do you calculate recipe food cost?",
+          "name": "How do you calculate recipe food cost accurately?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Recipe food cost is calculated by summing the actual cost of every ingredient used (accounting for package price, purchase volume, and prep trim/yield percentage), plus packaging supplies, labor hourly allocation, and fixed kitchen overhead."
+            "text": "Recipe food cost is calculated by summing the net cost of every ingredient used in the recipe (purchase price divided by package size, adjusted for prep trim and yield percentage), adding primary and secondary packaging materials, allocating labor hours at your designated hourly rate, and applying a proportional kitchen utility and rent overhead allocation."
           }
         },
         {
           "@type": "Question",
-          "name": "What is an ideal food cost percentage for a bakery?",
+          "name": "What is an ideal food cost percentage for a cottage or artisanal bakery?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "For artisanal and cottage bakeries, a healthy food cost percentage typically sits between 25% and 32%. For intricate custom decorating work, markup multipliers between 3.5x and 4.5x are common."
+            "text": "For artisanal and cottage bakeries, a healthy target food cost percentage sits between 25% and 32% (equating to a 3.1x to 4.0x markup over raw costs). For custom cake decorating with intensive labor, food cost should be kept below 20%-25% to cover skilled decorating time."
           }
         },
         {
           "@type": "Question",
-          "name": "Does BakeCost Studio store proprietary recipes on cloud servers?",
+          "name": "Why should bakers convert cups and tablespoons to grams?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "No. BakeCost Studio operates 100% in your local browser using Local Storage. All proprietary recipe measurements, prices, and formulas remain private on your device."
+            "text": "A standard US cup of flour can weigh anywhere between 115g and 160g depending on sifting, humidity, and scooping technique — a variance of up to 40%. Weighing in grams ensures exact chemical consistency in recipes and eliminates inventory shrinkage and margin leakage."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How does oven moisture evaporation affect batch pricing?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Baking causes water evaporation that reduces product weight by 5% to 18%. If you price items based on finished weight or portion sizes without accounting for moisture loss, you undercount the required raw ingredient mass, resulting in reduced profitability."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How does BakeCost Studio protect proprietary recipes?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "BakeCost Studio executes 100% in your local browser using LocalStorage. No recipes, formulas, supplier prices, or client data are ever transmitted to any cloud servers or third parties. It functions fully offline."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I export and print kitchen recipe cost sheets?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. BakeCost Studio includes a one-click Export Cost Card feature that generates a clean, printable recipe production card or downloadable high-resolution image formatted for kitchen binders and culinary records."
           }
         }
       ]
+    },
+    {
+      "@type": "Dataset",
+      "@id": "https://bake.skillary.ai/#dataset-densities",
+      "name": "Commercial Baking Ingredient Density & Volume-to-Weight Conversion Dataset",
+      "description": "A curated reference database of 40+ common baking ingredients containing empirical bulk density values (g/ml) for instant two-way conversion between volume and metric weight.",
+      "license": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "isAccessibleForFree": true
     }
   ]
 }
@@ -515,6 +598,180 @@
       </div>
     </aside>
   </main>
+
+  <!-- ============ SEMANTIC KNOWLEDGE BASE & GEO REFERENCE SECTION ============ -->
+  <section class="max-w-7xl mx-auto px-4 sm:px-6 py-12 border-t border-espresso/10 mt-8" aria-labelledby="guide-heading">
+    <!-- Section Header -->
+    <div class="max-w-3xl mb-10">
+      <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-caramel-100 text-caramel-800 text-xs font-semibold mb-3">
+        <span>📖</span> Culinary Accounting &amp; Pricing Handbook
+      </div>
+      <h2 id="guide-heading" class="text-2xl sm:text-3xl font-extrabold text-espresso tracking-tight">
+        Bakery Recipe Costing &amp; Food Margin Reference Guide
+      </h2>
+      <p class="text-sm sm:text-base text-espresso/70 mt-2 leading-relaxed">
+        A foundational guide for cottage bakers, pastry chefs, and cafe owners to eliminate margin leaks, calculate shrinkage accurately, and build sustainable retail pricing.
+      </p>
+    </div>
+
+    <!-- 4 Core Pillars Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-12">
+      <div class="bg-white rounded-2xl p-5 border border-espresso/10 shadow-sm">
+        <div class="w-9 h-9 rounded-xl bg-caramel-50 text-caramel-600 flex items-center justify-center font-bold text-lg mb-3">1</div>
+        <h3 class="font-bold text-espresso text-base mb-1.5">Weight vs. Volume</h3>
+        <p class="text-xs text-espresso/65 leading-relaxed">
+          A cup of flour can weigh between 115g and 160g depending on humidity and packing. Weighing every ingredient in grams eliminates a 25-40% variance in recipe batch consistency and ingredient expenditure.
+        </p>
+      </div>
+      <div class="bg-white rounded-2xl p-5 border border-espresso/10 shadow-sm">
+        <div class="w-9 h-9 rounded-xl bg-caramel-50 text-caramel-600 flex items-center justify-center font-bold text-lg mb-3">2</div>
+        <h3 class="font-bold text-espresso text-base mb-1.5">Prep Trim Loss (Yield %)</h3>
+        <p class="text-xs text-espresso/65 leading-relaxed">
+          Raw produce, eggshells, citrus zests, and trimmed dough margins represent unrecoverable mass. Dividing unit cost by usable yield percentage guarantees that waste is factored directly into wholesale price.
+        </p>
+      </div>
+      <div class="bg-white rounded-2xl p-5 border border-espresso/10 shadow-sm">
+        <div class="w-9 h-9 rounded-xl bg-caramel-50 text-caramel-600 flex items-center justify-center font-bold text-lg mb-3">3</div>
+        <h3 class="font-bold text-espresso text-base mb-1.5">Oven Evaporation</h3>
+        <p class="text-xs text-espresso/65 leading-relaxed">
+          Dough loses 5% to 18% of its initial raw weight in the oven due to water vaporization. Pricing finished items by raw dough weight undercharges for the concentrated ingredient density of finished loaves.
+        </p>
+      </div>
+      <div class="bg-white rounded-2xl p-5 border border-espresso/10 shadow-sm">
+        <div class="w-9 h-9 rounded-xl bg-caramel-50 text-caramel-600 flex items-center justify-center font-bold text-lg mb-3">4</div>
+        <h3 class="font-bold text-espresso text-base mb-1.5">The 28% Golden Ratio</h3>
+        <p class="text-xs text-espresso/65 leading-relaxed">
+          Maintaining raw food costs between 25% and 32% gives food artisans a 68% to 75% gross margin window to comfortably absorb kitchen rent, electricity, packaging, marketing, and founder wages.
+        </p>
+      </div>
+    </div>
+
+    <!-- Formulas & Math Breakdown -->
+    <div class="bg-white rounded-2xl p-6 sm:p-8 border border-espresso/10 shadow-sm mb-12">
+      <h3 class="text-lg sm:text-xl font-extrabold text-espresso mb-4 flex items-center gap-2">
+        <span>📐</span> Standard Culinary Costing Formulas
+      </h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-mono">
+        <div class="bg-oatmeal p-4 rounded-xl border border-espresso/10">
+          <p class="font-sans font-bold text-espresso text-sm mb-1">True Ingredient Line Cost</p>
+          <p class="text-caramel-700 font-semibold">[ (Purchase Price ÷ Package Size) × Usage Amount ] ÷ (Yield % ÷ 100)</p>
+          <p class="font-sans text-[11px] text-espresso/60 mt-1">Accounts for package bulk purchase discount and kitchen trim losses.</p>
+        </div>
+        <div class="bg-oatmeal p-4 rounded-xl border border-espresso/10">
+          <p class="font-sans font-bold text-espresso text-sm mb-1">Total Cost of Goods Sold (COGS)</p>
+          <p class="text-caramel-700 font-semibold">Ingredients Total + Packaging Total + (Labor Hours × Wage) + Overhead</p>
+          <p class="font-sans text-[11px] text-espresso/60 mt-1">Includes boxes, inserts, hourly kitchen rate, and utilities.</p>
+        </div>
+        <div class="bg-oatmeal p-4 rounded-xl border border-espresso/10">
+          <p class="font-sans font-bold text-espresso text-sm mb-1">Finished Net Baked Mass</p>
+          <p class="text-caramel-700 font-semibold">Sum(Raw Ingredient Grams) × [ 1 - (Baking Evaporation % ÷ 100) ]</p>
+          <p class="font-sans text-[11px] text-espresso/60 mt-1">Calculates true final loaf or pastry weight for compliance and portioning.</p>
+        </div>
+        <div class="bg-oatmeal p-4 rounded-xl border border-espresso/10">
+          <p class="font-sans font-bold text-espresso text-sm mb-1">Target Food Cost Retail Price</p>
+          <p class="text-caramel-700 font-semibold">Suggested Retail Price = Total Batch Cost ÷ (Target Food Cost % ÷ 100)</p>
+          <p class="font-sans text-[11px] text-espresso/60 mt-1">e.g. at 28% target food cost, multiply Total Batch Cost by 3.57x.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- High-Frequency Ingredient Density Reference Table -->
+    <div class="bg-white rounded-2xl p-6 sm:p-8 border border-espresso/10 shadow-sm mb-12">
+      <div class="flex items-center justify-between flex-wrap gap-2 mb-4">
+        <h3 class="text-lg sm:text-xl font-extrabold text-espresso flex items-center gap-2">
+          <span>⚖️</span> Common Bakery Ingredient Density Benchmarks
+        </h3>
+        <span class="text-xs text-espresso/50">Standards based on USDA Agricultural Data &amp; Professional Pastry Baselines</span>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs border-collapse">
+          <thead>
+            <tr class="border-b border-espresso/15 text-espresso/60 font-semibold uppercase text-[10px] tracking-wider">
+              <th class="py-2.5 px-3">Ingredient</th>
+              <th class="py-2.5 px-3">Category</th>
+              <th class="py-2.5 px-3">Bulk Density (g/ml)</th>
+              <th class="py-2.5 px-3">1 US Cup Equivalent</th>
+              <th class="py-2.5 px-3">1 Tablespoon (tbsp)</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-espresso/10 text-espresso/80">
+            <tr><td class="py-2 px-3 font-semibold text-espresso">All-Purpose Flour (Wheat)</td><td class="py-2 px-3">Flours &amp; Grains</td><td class="py-2 px-3 font-mono">0.528</td><td class="py-2 px-3 font-mono font-bold text-caramel-700">125 g</td><td class="py-2 px-3 font-mono">7.8 g</td></tr>
+            <tr><td class="py-2 px-3 font-semibold text-espresso">Bread Flour (High Gluten)</td><td class="py-2 px-3">Flours &amp; Grains</td><td class="py-2 px-3 font-mono">0.537</td><td class="py-2 px-3 font-mono font-bold text-caramel-700">127 g</td><td class="py-2 px-3 font-mono">7.9 g</td></tr>
+            <tr><td class="py-2 px-3 font-semibold text-espresso">Cake Flour (Softened)</td><td class="py-2 px-3">Flours &amp; Grains</td><td class="py-2 px-3 font-mono">0.482</td><td class="py-2 px-3 font-mono font-bold text-caramel-700">114 g</td><td class="py-2 px-3 font-mono">7.1 g</td></tr>
+            <tr><td class="py-2 px-3 font-semibold text-espresso">Almond Flour (Blanched)</td><td class="py-2 px-3">Nut Flours</td><td class="py-2 px-3 font-mono">0.406</td><td class="py-2 px-3 font-mono font-bold text-caramel-700">96 g</td><td class="py-2 px-3 font-mono">6.0 g</td></tr>
+            <tr><td class="py-2 px-3 font-semibold text-espresso">Granulated White Sugar</td><td class="py-2 px-3">Sweeteners</td><td class="py-2 px-3 font-mono">0.845</td><td class="py-2 px-3 font-mono font-bold text-caramel-700">200 g</td><td class="py-2 px-3 font-mono">12.5 g</td></tr>
+            <tr><td class="py-2 px-3 font-semibold text-espresso">Brown Sugar (Light/Dark Packed)</td><td class="py-2 px-3">Sweeteners</td><td class="py-2 px-3 font-mono">0.930</td><td class="py-2 px-3 font-mono font-bold text-caramel-700">220 g</td><td class="py-2 px-3 font-mono">13.8 g</td></tr>
+            <tr><td class="py-2 px-3 font-semibold text-espresso">Confectioners / Powdered Sugar</td><td class="py-2 px-3">Sweeteners</td><td class="py-2 px-3 font-mono">0.507</td><td class="py-2 px-3 font-mono font-bold text-caramel-700">120 g</td><td class="py-2 px-3 font-mono">7.5 g</td></tr>
+            <tr><td class="py-2 px-3 font-semibold text-espresso">Unsalted / Salted Butter</td><td class="py-2 px-3">Fats &amp; Dairy</td><td class="py-2 px-3 font-mono">0.960</td><td class="py-2 px-3 font-mono font-bold text-caramel-700">227 g (2 sticks)</td><td class="py-2 px-3 font-mono">14.2 g</td></tr>
+            <tr><td class="py-2 px-3 font-semibold text-espresso">Heavy Whipping Cream (36%)</td><td class="py-2 px-3">Fats &amp; Dairy</td><td class="py-2 px-3 font-mono">0.989</td><td class="py-2 px-3 font-mono font-bold text-caramel-700">234 g</td><td class="py-2 px-3 font-mono">14.6 g</td></tr>
+            <tr><td class="py-2 px-3 font-semibold text-espresso">Whole Milk</td><td class="py-2 px-3">Liquids &amp; Dairy</td><td class="py-2 px-3 font-mono">1.031</td><td class="py-2 px-3 font-mono font-bold text-caramel-700">244 g</td><td class="py-2 px-3 font-mono">15.3 g</td></tr>
+            <tr><td class="py-2 px-3 font-semibold text-espresso">Pure Honey / Molasses</td><td class="py-2 px-3">Sweeteners</td><td class="py-2 px-3 font-mono">1.437</td><td class="py-2 px-3 font-mono font-bold text-caramel-700">340 g</td><td class="py-2 px-3 font-mono">21.3 g</td></tr>
+            <tr><td class="py-2 px-3 font-semibold text-espresso">Semi-Sweet Chocolate Chips</td><td class="py-2 px-3">Chocolates</td><td class="py-2 px-3 font-mono">0.718</td><td class="py-2 px-3 font-mono font-bold text-caramel-700">170 g</td><td class="py-2 px-3 font-mono">10.6 g</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Comprehensive FAQ Accordion/Cards -->
+    <div class="mb-12">
+      <h3 class="text-lg sm:text-xl font-extrabold text-espresso mb-6 flex items-center gap-2">
+        <span>💡</span> Frequently Asked Questions by Independent Bakers
+      </h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div class="bg-white rounded-2xl p-5 border border-espresso/10 shadow-sm">
+          <h4 class="font-bold text-espresso text-sm sm:text-base mb-2">How do you calculate recipe food cost accurately?</h4>
+          <p class="text-xs sm:text-sm text-espresso/70 leading-relaxed">
+            Sum the net cost of every ingredient used in the recipe (purchase price divided by package size, adjusted for prep trim and yield percentage), add primary and secondary packaging materials, allocate direct labor hours at your designated hourly rate, and apply a proportional kitchen utility and rent overhead allocation.
+          </p>
+        </div>
+        <div class="bg-white rounded-2xl p-5 border border-espresso/10 shadow-sm">
+          <h4 class="font-bold text-espresso text-sm sm:text-base mb-2">What is an ideal food cost percentage for a cottage bakery?</h4>
+          <p class="text-xs sm:text-sm text-espresso/70 leading-relaxed">
+            For artisanal and cottage bakeries, a healthy target food cost percentage sits between 25% and 32% (equating to a 3.1x to 4.0x markup over raw costs). For custom cake decorating with intensive labor, food cost should be kept below 20%-25% to cover skilled decorating time.
+          </p>
+        </div>
+        <div class="bg-white rounded-2xl p-5 border border-espresso/10 shadow-sm">
+          <h4 class="font-bold text-espresso text-sm sm:text-base mb-2">Why should bakers convert cups and tablespoons to grams?</h4>
+          <p class="text-xs sm:text-sm text-espresso/70 leading-relaxed">
+            A standard US cup of flour can weigh anywhere between 115g and 160g depending on sifting, humidity, and scooping technique — a variance of up to 40%. Weighing in grams ensures exact chemical consistency in recipes and eliminates inventory shrinkage and margin leakage.
+          </p>
+        </div>
+        <div class="bg-white rounded-2xl p-5 border border-espresso/10 shadow-sm">
+          <h4 class="font-bold text-espresso text-sm sm:text-base mb-2">How does oven moisture evaporation affect batch pricing?</h4>
+          <p class="text-xs sm:text-sm text-espresso/70 leading-relaxed">
+            Baking causes water evaporation that reduces product weight by 5% to 18%. If you price items based on finished weight or portion sizes without accounting for moisture loss, you undercount the required raw ingredient mass, resulting in reduced profitability.
+          </p>
+        </div>
+        <div class="bg-white rounded-2xl p-5 border border-espresso/10 shadow-sm">
+          <h4 class="font-bold text-espresso text-sm sm:text-base mb-2">How does BakeCost Studio protect proprietary recipes?</h4>
+          <p class="text-xs sm:text-sm text-espresso/70 leading-relaxed">
+            BakeCost Studio executes 100% in your local browser using LocalStorage. No recipes, formulas, supplier prices, or client data are ever transmitted to any cloud servers or third parties. It functions fully offline.
+          </p>
+        </div>
+        <div class="bg-white rounded-2xl p-5 border border-espresso/10 shadow-sm">
+          <h4 class="font-bold text-espresso text-sm sm:text-base mb-2">Can I export and print kitchen recipe cost sheets?</h4>
+          <p class="text-xs sm:text-sm text-espresso/70 leading-relaxed">
+            Yes. BakeCost Studio includes a one-click Export Cost Card feature that generates a clean, printable recipe production card or downloadable high-resolution image formatted for kitchen binders and culinary records.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Semantic Footer -->
+    <footer class="pt-8 border-t border-espresso/10 flex flex-col sm:flex-row items-center justify-between text-xs text-espresso/50 gap-4">
+      <div>
+        <p class="font-semibold text-espresso/70">BakeCost Studio &copy; 2026 — Built for Independent Bakers &amp; Pastry Artisans.</p>
+        <p class="mt-0.5">100% Client-Side Local Privacy. Zero Cloud Tracking.</p>
+      </div>
+      <div class="flex items-center gap-4">
+        <a href="/sitemap.xml" class="hover:text-caramel-600 transition-colors underline">Sitemap</a>
+        <a href="/llms.txt" class="hover:text-caramel-600 transition-colors underline">llms.txt</a>
+        <a href="/llms-full.txt" class="hover:text-caramel-600 transition-colors underline">llms-full.txt</a>
+        <a href="https://github.com/ismilewolf-eng/bakecost-studio" target="_blank" rel="noopener" class="hover:text-caramel-600 transition-colors underline">Open Source GitHub</a>
+      </div>
+    </footer>
+  </section>
+
 
   <!-- ============ EXPORT MODAL ============ -->
   <transition name="fade">
