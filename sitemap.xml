@@ -7,7 +7,7 @@
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
     <image:image>
-      <image:loc>https://bake.skillary.ai/og-image.png</image:loc>
+      <image:loc>https://raw.githubusercontent.com/ismilewolf-eng/bakecost-studio/main/og-image.png</image:loc>
       <image:title>BakeCost Studio Recipe Costing &amp; Bakery Food Margin Calculator</image:title>
     </image:image>
   </url>
