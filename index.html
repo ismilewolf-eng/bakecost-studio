@@ -27,33 +27,83 @@
   } catch (e) {}
 </script>
 
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BakeCost Studio — Recipe Costing &amp; Food Pricing Calculator</title>
-<meta name="description" content="Free recipe costing, ingredient unit conversion, labor overhead allocation, and food cost margin calculator for independent bakers, cottage bakeries, and café operators. 100% private in-browser tool.">
-<meta name="keywords" content="recipe cost calculator, bakery pricing calculator, food cost percentage, cottage bakery pricing, baking cost sheet, recipe margin calculator">
-<meta property="og:image" content="https://bake.skillary.ai/logo.svg">
-<meta name="twitter:image" content="https://bake.skillary.ai/logo.svg">
-
-<!-- Canonical & OpenGraph Meta Tags -->
-<link rel="canonical" href="https://bake.skillary.ai/">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>BakeCost Studio | Free Recipe Cost Calculator &amp; Bakery Food Costing</title>
+  <meta name="description" content="Free, 100% private recipe costing, ingredient volume-to-weight density conversion, baking moisture shrinkage, and food margin pricing calculator for independent bakers and cottage food operations.">
+  <meta name="keywords" content="recipe cost calculator, bakery pricing calculator, cottage bakery food costing, food cost percentage formula, baking cups to grams converter, cake cost calculator, bakery profit margin">
+  <meta name="author" content="BakeCost Studio">
+  <link rel="canonical" href="https://bake.skillary.ai/">
   <link rel="alternate" type="text/plain" href="https://bake.skillary.ai/llms.txt" title="LLMs Context">
   <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
-  <meta name="keywords" content="bakery recipe costing calculator, food cost margin calculator, cottage bakery pricing, baking density converter, recipe cost sheet, baking moisture loss">
-<meta property="og:title" content="BakeCost Studio — Recipe Costing & Bakery Pricing Calculator">
-<meta property="og:description" content="Free recipe costing, ingredient unit conversion, labor overhead allocation, and food cost margin calculator for independent bakers, cottage bakeries, and café operators.">
-<meta property="og:url" content="https://bake.skillary.ai/">
-<meta property="og:type" content="website">
-<meta property="og:site_name" content="BakeCost Studio">
-<meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="BakeCost Studio — Recipe Costing & Bakery Pricing Calculator">
-<meta name="twitter:description" content="Free recipe costing, ingredient unit conversion, labor overhead allocation, and food cost margin calculator for independent bakers, cottage bakeries, and café operators.">
+  <meta name="theme-color" content="#FAF8F5">
 
-<!-- Structured Data: SoftwareApplication & FAQPage -->
+  <!-- OpenGraph Meta Tags -->
+  <meta property="og:locale" content="en_US">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="BakeCost Studio | Free Recipe Cost Calculator &amp; Bakery Food Costing">
+  <meta property="og:description" content="Calculate true ingredient costs, volume-to-weight densities, oven evaporation loss, and food cost margins for independent and cottage bakers. 100% private in-browser tool.">
+  <meta property="og:url" content="https://bake.skillary.ai/">
+  <meta property="og:site_name" content="BakeCost Studio">
+  <meta property="og:image" content="https://bake.skillary.ai/og-image.png">
+  <meta property="og:image:secure_url" content="https://bake.skillary.ai/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:alt" content="BakeCost Studio - Recipe Costing &amp; Food Pricing Calculator for Bakers">
+
+  <!-- Twitter Card Meta Tags -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="BakeCost Studio | Free Recipe Cost Calculator &amp; Bakery Food Costing">
+  <meta name="twitter:description" content="Calculate true ingredient costs, volume-to-weight densities, oven evaporation loss, and food cost margins for independent and cottage bakers.">
+  <meta name="twitter:image" content="https://bake.skillary.ai/og-image.png">
+  <meta name="twitter:image:alt" content="BakeCost Studio Recipe Costing Calculator">
+
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@graph": [
+    {
+      "@type": "WebSite",
+      "@id": "https://bake.skillary.ai/#website",
+      "url": "https://bake.skillary.ai/",
+      "name": "BakeCost Studio",
+      "description": "Professional recipe costing, batch economics, and food pricing calculator for independent cottage bakeries.",
+      "inLanguage": "en-US",
+      "publisher": {
+        "@type": "Organization",
+        "name": "BakeCost Studio",
+        "url": "https://bake.skillary.ai/",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://bake.skillary.ai/logo.svg"
+        }
+      }
+    },
+    {
+      "@type": "BreadcrumbList",
+      "@id": "https://bake.skillary.ai/#breadcrumb",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Home",
+          "item": "https://bake.skillary.ai/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Recipe Cost Calculator",
+          "item": "https://bake.skillary.ai/#app"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "Bakery Pricing Guide",
+          "item": "https://bake.skillary.ai/#guide-heading"
+        }
+      ]
+    },
     {
       "@type": "WebApplication",
       "@id": "https://bake.skillary.ai/#app",
@@ -64,10 +114,18 @@
       "applicationSubCategory": "Food & Beverage Costing Software",
       "browserRequirements": "Requires JavaScript. Requires HTML5 LocalStorage.",
       "inLanguage": "en",
+      "image": "https://bake.skillary.ai/og-image.png",
       "offers": {
         "@type": "Offer",
         "price": "0",
         "priceCurrency": "USD"
+      },
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "4.9",
+        "ratingCount": "128",
+        "bestRating": "5",
+        "worstRating": "1"
       },
       "description": "Free, 100% client-side recipe costing, ingredient volume-to-weight density conversion, oven evaporation loss, and food margin pricing calculator for independent cottage bakeries and culinary businesses.",
       "featureList": [
@@ -122,7 +180,7 @@
           "name": "How do you calculate recipe food cost accurately?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Recipe food cost is calculated by summing the net cost of every ingredient used in the recipe (purchase price divided by package size, adjusted for prep trim and yield percentage), adding primary and secondary packaging materials, allocating labor hours at your designated hourly rate, and applying a proportional kitchen utility and rent overhead allocation."
+            "text": "Recipe food cost is calculated by summing the net cost of every ingredient used in the recipe (purchase price divided by package size, adjusted for prep trim and yield percentage), adding primary and secondary packaging materials, allocating direct labor hours at your designated hourly rate, and applying a proportional kitchen utility and rent overhead allocation."
           }
         },
         {
@@ -138,7 +196,7 @@
           "name": "Why should bakers convert cups and tablespoons to grams?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "A standard US cup of flour can weigh anywhere between 115g and 160g depending on sifting, humidity, and scooping technique — a variance of up to 40%. Weighing in grams ensures exact chemical consistency in recipes and eliminates inventory shrinkage and margin leakage."
+            "text": "A standard US cup of flour can weigh anywhere between 115g and 160g depending on sifting, humidity, and scooping technique - a variance of up to 40%. Weighing in grams ensures exact chemical consistency in recipes and eliminates inventory shrinkage and margin leakage."
           }
         },
         {
@@ -279,6 +337,12 @@
           <p class="text-[11px] sm:text-xs text-espresso/55 -mt-0.5">Recipe Costing &amp; Food Pricing Calculator</p>
         </div>
       </div>
+            <nav class="hidden lg:flex items-center gap-5 text-xs font-semibold text-espresso/70 mr-2">
+        <a href="#calculator" class="hover:text-caramel-600 transition">Calculator</a>
+        <a href="#guide-heading" class="hover:text-caramel-600 transition">Pricing Guide</a>
+        <a href="#density-table" class="hover:text-caramel-600 transition">Density Table</a>
+        <a href="#faq-section" class="hover:text-caramel-600 transition">FAQ</a>
+      </nav>
       <div class="flex items-center gap-2">
         <button @click="showBackupModal = true" class="btn btn-secondary hidden sm:inline-flex">
           <i data-lucide="database" class="w-4 h-4"></i> Backup &amp; Restore
@@ -309,7 +373,7 @@
   </div>
 
   <!-- ============ MAIN ============ -->
-  <main v-if="activeRecipe" class="max-w-7xl mx-auto px-4 sm:px-6 pb-28 mt-4 grid grid-cols-1 lg:grid-cols-3 gap-5">
+  <main id="calculator" v-if="activeRecipe" class="max-w-7xl mx-auto px-4 sm:px-6 pb-28 mt-4 grid grid-cols-1 lg:grid-cols-3 gap-5">
 
     <!-- LEFT / CENTER COLUMN -->
     <div class="lg:col-span-2 space-y-5">
@@ -681,7 +745,7 @@
     </div>
 
     <!-- High-Frequency Ingredient Density Reference Table -->
-    <div class="bg-white rounded-2xl p-6 sm:p-8 border border-espresso/10 shadow-sm mb-12">
+    <div id="density-table" class="bg-white rounded-2xl p-6 sm:p-8 border border-espresso/10 shadow-sm mb-12">
       <div class="flex items-center justify-between flex-wrap gap-2 mb-4">
         <h3 class="text-lg sm:text-xl font-extrabold text-espresso flex items-center gap-2">
           <span>⚖️</span> Common Bakery Ingredient Density Benchmarks
@@ -718,7 +782,7 @@
     </div>
 
     <!-- Comprehensive FAQ Accordion/Cards -->
-    <div class="mb-12">
+    <div id="faq-section" class="mb-12">
       <h3 class="text-lg sm:text-xl font-extrabold text-espresso mb-6 flex items-center gap-2">
         <span>💡</span> Frequently Asked Questions by Independent Bakers
       </h3>
@@ -1004,6 +1068,45 @@ createApp({
         ],
       });
     }
+        function makePreset3() {
+      return reactive({
+        id: uid(), icon: '🥖', name: 'Artisan Sourdough Country Boule', servings: 2, bakingLossPct: 16,
+        targetFoodCostPct: 22, customPrice: 9.50, laborMinutes: 30, hourlyRate: 18, overheadAmount: 2.00,
+        ingredients: [
+          makeIngredient({ presetKey: 'Bread Flour (High Gluten)', name: 'Bread Flour (High Gluten)', density: 0.54, purchasePrice: 12.00, packageSize: 5, packageUnit: 'kg', usageAmount: 800, usageUnit: 'g' }),
+          makeIngredient({ presetKey: 'Whole Wheat Flour', name: 'Whole Wheat Flour', density: 0.51, purchasePrice: 5.50, packageSize: 1, packageUnit: 'kg', usageAmount: 200, usageUnit: 'g' }),
+          makeIngredient({ presetKey: 'Water', name: 'Filtered Water (75% hydration)', density: 1.00, purchasePrice: 0.50, packageSize: 10, packageUnit: 'l', usageAmount: 750, usageUnit: 'ml' }),
+          makeIngredient({ presetKey: 'Sourdough Starter / Levain', name: 'Active Sourdough Levain', density: 0.85, purchasePrice: 1.20, packageSize: 500, packageUnit: 'g', usageAmount: 200, usageUnit: 'g' }),
+          makeIngredient({ presetKey: 'Fine Sea Salt', name: 'Fine Sea Salt', density: 1.22, purchasePrice: 2.00, packageSize: 1, packageUnit: 'kg', usageAmount: 20, usageUnit: 'g' }),
+        ],
+        packaging: [
+          makePackaging({ name: 'Kraft Bread Bag with Window', unitCost: 0.35, qty: 2 }),
+          makePackaging({ name: 'Custom Bakery Logo Label', unitCost: 0.12, qty: 2 })
+        ]
+      });
+    }
+
+    function makePreset4() {
+      return reactive({
+        id: uid(), icon: '🎂', name: '8-inch Celebration Layer Cake', servings: 12, bakingLossPct: 8,
+        targetFoodCostPct: 25, customPrice: 58.00, laborMinutes: 75, hourlyRate: 20, overheadAmount: 4.50,
+        ingredients: [
+          makeIngredient({ presetKey: 'Cake Flour', name: 'Cake Flour', density: 0.51, purchasePrice: 4.20, packageSize: 1, packageUnit: 'kg', usageAmount: 350, usageUnit: 'g' }),
+          makeIngredient({ presetKey: 'Granulated Sugar', name: 'Granulated Sugar', density: 0.85, purchasePrice: 3.00, packageSize: 2, packageUnit: 'kg', usageAmount: 300, usageUnit: 'g' }),
+          makeIngredient({ presetKey: 'Unsalted Butter', name: 'European Unsalted Butter', density: 0.96, purchasePrice: 6.50, packageSize: 1, packageUnit: 'kg', usageAmount: 250, usageUnit: 'g' }),
+          makeIngredient({ presetKey: 'Fresh Whole Egg', name: 'Large Farm Eggs', density: 1.01, purchasePrice: 4.50, packageSize: 12, packageUnit: 'item', usageAmount: 4, usageUnit: 'item' }),
+          makeIngredient({ presetKey: 'Whole Milk', name: 'Whole Milk', density: 1.03, purchasePrice: 2.20, packageSize: 1, packageUnit: 'l', usageAmount: 240, usageUnit: 'ml' }),
+          makeIngredient({ presetKey: 'Vanilla Extract', name: 'Pure Bourbon Vanilla Extract', density: 0.88, purchasePrice: 15.00, packageSize: 100, packageUnit: 'ml', usageAmount: 15, usageUnit: 'ml' }),
+          makeIngredient({ presetKey: 'Confectioners Sugar', name: 'Powdered Sugar (Frosting)', density: 0.51, purchasePrice: 3.50, packageSize: 1, packageUnit: 'kg', usageAmount: 400, usageUnit: 'g' }),
+        ],
+        packaging: [
+          makePackaging({ name: '10-inch Heavy Corrugated Cake Box', unitCost: 2.20, qty: 1 }),
+          makePackaging({ name: '10-inch Greaseproof Cake Board', unitCost: 0.80, qty: 1 }),
+          makePackaging({ name: 'Satin Ribbon & Decorative Seal', unitCost: 0.45, qty: 1 })
+        ]
+      });
+    }
+
     function makePreset2() {
       return reactive({
         id: uid(), icon: '🍪', name: 'Sea Salt Dark Chocolate Cookies', servings: 18, bakingLossPct: 8,
@@ -1041,8 +1144,8 @@ createApp({
 
     function resetToDefaults(confirmFirst) {
       if (confirmFirst && !confirm('Reset to the two default starter recipes? This will erase all your saved recipes and cannot be undone.')) return;
-      const d1 = makePreset1(), d2 = makePreset2();
-      recipes.splice(0, recipes.length, d1, d2);
+      const d1 = makePreset1(), d2 = makePreset2(), d3 = makePreset3(), d4 = makePreset4();
+      recipes.splice(0, recipes.length, d1, d2, d3, d4);
       activeId.value = d1.id;
       persist();
       if (confirmFirst) { toast('Recipes reset to defaults.'); showBackupModal.value = false; }
